@@ -4,15 +4,15 @@
 # services on Render using the latest possible versions.
 # ─────────────────────────────────────────────────────────────────────────────
 
-services:
+databases:
   # ── PostgreSQL Database (v18) ───────────────────────────────────────────────
-  - type: database
-    name: shopwave-db
+  - name: shopwave-db
     plan: free
     region: singapore
     ipAllowList: []
     postgresMajorVersion: 18           # Using requested latest version
 
+services:
   # ── FastAPI Backend (Python 3.14) ──────────────────────────────────────────
   - type: web
     name: shopwave-backend

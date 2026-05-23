@@ -96,12 +96,9 @@ async def login(
     OAuth2 password flow — returns access token; sets refresh token cookie.
     Uses 'username' field for the email address (OAuth2 spec requirement).
     """
-    result = await db.execute(select(User).where(User.email == form_data.username))
-    user = result.scalar_one_or_none()
-
-    # Use the same error for "user not found" and "wrong password" to prevent
-    # user-enumeration attacks (timing attacks mitigated by constant-time verify)
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    from app.services.auth_service import authenticate_user
+    user = await authenticate_user(db, email=form_data.username, password=form_data.password)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

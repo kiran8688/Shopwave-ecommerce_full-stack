@@ -54,6 +54,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origin_regex=r"https://.*\.onrender\.com|http://localhost(:\d+)?|http://127\.0.0\.1(:\d+)?",
     allow_credentials=True,    # Required for cookies (HttpOnly refresh token)
     allow_methods=["*"],       # Allow all HTTP methods
     allow_headers=["*"],       # Allow all headers including Authorization
@@ -72,6 +73,19 @@ if not settings.DEBUG:
 # ── Mount API router ──────────────────────────────────────────────────────────
 # All routes live under /api/v1/... — this prefix is defined in settings.
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+
+# ── Root endpoint ────────────────────────────────────────────────────────────
+@app.get("/", tags=["General"])
+@app.head("/", tags=["General"])
+async def root_ping() -> dict:
+    """Root ping endpoint to verify API server is online."""
+    return {
+        "message": "Welcome to the ShopWave E-Commerce API",
+        "docs_url": "/docs",
+        "version": settings.APP_VERSION,
+        "status": "healthy"
+    }
 
 
 # ── Health check ─────────────────────────────────────────────────────────────

@@ -74,6 +74,19 @@ if not settings.DEBUG:
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
+# ── Root endpoint ────────────────────────────────────────────────────────────
+@app.get("/", tags=["General"])
+@app.head("/", tags=["General"])
+async def root_ping() -> dict:
+    """Root ping endpoint to verify API server is online."""
+    return {
+        "message": "Welcome to the ShopWave E-Commerce API",
+        "docs_url": "/docs",
+        "version": settings.APP_VERSION,
+        "status": "healthy"
+    }
+
+
 # ── Health check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 async def health_check() -> dict:

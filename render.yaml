@@ -34,13 +34,14 @@ services:
         value: "false"
       - key: BACKEND_CORS_ORIGINS
         fromService:
-          type: static
+          type: web
           name: shopwave-frontend
           property: host
 
   # ── React Frontend (SPA) ───────────────────────────────────────────────────
-  - type: static
+  - type: web
     name: shopwave-frontend
+    runtime: static
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
     envVars:

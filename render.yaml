@@ -33,7 +33,10 @@ services:
       - key: DEBUG
         value: "false"
       - key: BACKEND_CORS_ORIGINS
-        value: "https://shopwave-frontend-ffk1.onrender.com,http://localhost:3000,http://localhost:5173"
+        fromService:
+          type: web
+          name: shopwave-frontend
+          property: host
 
   # ── React Frontend (SPA) ───────────────────────────────────────────────────
   - type: web

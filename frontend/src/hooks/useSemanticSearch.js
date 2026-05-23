@@ -35,7 +35,7 @@ export function useSemanticSearch({
       if (minPrice != null) params.append('min_price', String(minPrice))
       if (maxPrice != null) params.append('max_price', String(maxPrice))
 
-      const { data } = await api.get(`/api/v1/products/search?${params}`)
+      const { data } = await api.get(`/api/v1/products/search/semantic?${params}`)
       return data
     },
 

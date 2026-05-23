@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
         result = []
         for origin in origins:
-            if not origin.startswith(("http://", "https://")):
+            if origin != "*" and not origin.startswith(("http://", "https://")):
                 origin = f"https://{origin}"
             result.append(origin)
         return result
@@ -72,9 +72,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",          # Load from .env file in the working directory
         env_file_encoding="utf-8",
-        case_sensitive=False,     # DB_URL and db_url both work
-        env_parse_none_str="None",
-        env_parse_empty_str="None"
+        case_sensitive=False,
+        env_ignore_empty=True
     )
 
 

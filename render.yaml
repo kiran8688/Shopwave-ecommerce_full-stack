@@ -41,7 +41,7 @@ services:
   # ── React Frontend (SPA) ───────────────────────────────────────────────────
   - type: web
     name: shopwave-frontend
-    runtime: static
+    env: static
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
     envVars:
@@ -49,7 +49,7 @@ services:
         fromService:
           type: web
           name: shopwave-backend
-          property: host
+          property: url
     routes:
       - type: rewrite
         source: "/*"

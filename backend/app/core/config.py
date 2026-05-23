@@ -31,8 +31,19 @@ class Settings(BaseSettings):
     # Full async DSN e.g.: postgresql+asyncpg://user:pass@db:5432/ecommerce
     DATABASE_URL: str                        # Set in docker-compose via environment block
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str | None) -> str | None:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            if v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
+
     # ── CORS — allowed origins for the React frontend ────────────────────────
-    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl] = []
 
     # ── Allowed hosts for TrustedHostMiddleware ──────────────────────────────
     ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "*.onrender.com"]
@@ -40,16 +51,30 @@ class Settings(BaseSettings):
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: str | list) -> list:
-        # Accept either a JSON array string or a comma-separated string from .env
+        import json
         if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        return v
+            origins = [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            origins = v
+        elif isinstance(v, str) and v.startswith("["):
+             origins = json.loads(v)
+        else:
+            origins = []
+
+        result = []
+        for origin in origins:
+            if not origin.startswith(("http://", "https://")):
+                origin = f"https://{origin}"
+            result.append(origin)
+        return result
 
     # ── Pydantic-Settings config ──────────────────────────────────────────────
     model_config = SettingsConfigDict(
         env_file=".env",          # Load from .env file in the working directory
         env_file_encoding="utf-8",
         case_sensitive=False,     # DB_URL and db_url both work
+        env_parse_none_str="None",
+        env_parse_empty_str="None"
     )
 
 

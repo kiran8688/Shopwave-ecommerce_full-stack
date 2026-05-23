@@ -38,15 +38,14 @@ services:
   # ── React Frontend (SPA) ───────────────────────────────────────────────────
   - type: web
     name: shopwave-frontend
-    env: static
+    runtime: static
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: shopwave-backend
-          property: url
+        value: "https://shopwave-backend-ffk1.onrender.com"
+      - key: NODE_VERSION
+        value: "20.11.0"
     routes:
       - type: rewrite
         source: "/*"

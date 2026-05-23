@@ -34,6 +34,12 @@ services:
         value: "false"
       - key: BACKEND_CORS_ORIGINS
         value: "https://shopwave-frontend-ffk1.onrender.com,http://localhost:3000,http://localhost:5173"
+      - key: FIRST_ADMIN_EMAIL
+        value: "admin@shopwave.com"
+      - key: FIRST_ADMIN_PASSWORD
+        generateValue: true
+      - key: FIRST_ADMIN_USERNAME
+        value: "admin"
 
   # ── React Frontend (SPA) ───────────────────────────────────────────────────
   - type: web

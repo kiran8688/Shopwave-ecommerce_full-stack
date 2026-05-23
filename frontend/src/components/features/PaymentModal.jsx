@@ -34,7 +34,7 @@ export default function PaymentModal({ orderId, totalAmount, onSuccess }) {
       // window.Razorpay is loaded via <script> tag in index.html:
       // <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       const options = {
-        key:         import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key:         import.meta.env.VITE_RAZORPAY_KEY_ID || intent.key_id || 'rzp_test_shopwavekeys',
         amount:      intent.amount,          // In paise (already set by mcp-payments)
         currency:    intent.currency,
         order_id:    intent.razorpay_order_id,

@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopWave — CI/CD Pipeline Documentation</title>
+    <meta name="description" content="Complete CI/CD pipeline documentation for the ShopWave e-commerce platform using GitHub Actions, Railway, Vercel, and Neon.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           DESIGN TOKENS
+           ═══════════════════════════════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #1e1e35;
+            --bg-code: #0d0d15;
+            --bg-code-header: #16162a;
+
+            --text-primary: #e8e8f0;
+            --text-secondary: #9898b8;
+            --text-muted: #6868a0;
+            --text-code: #c8d0e0;
+
+            --accent-blue: #5b8def;
+            --accent-blue-dim: #3a6dd0;
+            --accent-purple: #a77bfa;
+            --accent-purple-dim: #8b5cf6;
+            --accent-green: #34d399;
+            --accent-green-dim: #10b981;
+            --accent-amber: #fbbf24;
+            --accent-red: #f87171;
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f472b6;
+
+            --gradient-hero: linear-gradient(135deg, #5b8def 0%, #a77bfa 50%, #f472b6 100%);
+            --gradient-card: linear-gradient(135deg, rgba(91, 141, 239, 0.08), rgba(167, 123, 250, 0.05));
+            --gradient-border: linear-gradient(135deg, rgba(91, 141, 239, 0.3), rgba(167, 123, 250, 0.1));
+
+            --border-default: rgba(255, 255, 255, 0.06);
+            --border-bright: rgba(255, 255, 255, 0.12);
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 40px rgba(91, 141, 239, 0.08);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           RESET & BASE
+           ═══════════════════════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 15px;
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           SCROLLBAR
+           ═══════════════════════════════════════════════════════════════════════ */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(91, 141, 239, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(91, 141, 239, 0.4); }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           ANIMATED BACKGROUND
+           ═══════════════════════════════════════════════════════════════════════ */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.03;
+            background-image:
+                linear-gradient(rgba(91, 141, 239, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(91, 141, 239, 0.5) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        .bg-radial-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-radial-glow.top {
+            top: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-blue);
+        }
+
+        .bg-radial-glow.bottom {
+            bottom: -200px;
+            right: -100px;
+            background: var(--accent-purple);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           LAYOUT
+           ═══════════════════════════════════════════════════════════════════════ */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           HERO HEADER
+           ═══════════════════════════════════════════════════════════════════════ */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 40px;
+            background: rgba(91, 141, 239, 0.1);
+            border: 1px solid rgba(91, 141, 239, 0.2);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 28px;
+            animation: fadeInDown 0.4s ease-out;
+        }
+
+        .hero-badge .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            animation: fadeInUp 0.5s ease-out 0.1s both;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 0.5s ease-out 0.2s both;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           QUICK NAV
+           ═══════════════════════════════════════════════════════════════════════ */
+        .quick-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 40px 0 60px;
+            animation: fadeInUp 0.5s ease-out 0.3s both;
+        }
+
+        .quick-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .quick-nav a:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           SECTIONS
+           ═══════════════════════════════════════════════════════════════════════ */
+        .section {
+            margin-bottom: 64px;
+            scroll-margin-top: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .section-header .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .section-header .icon.blue { background: rgba(91, 141, 239, 0.12); }
+        .section-header .icon.purple { background: rgba(167, 123, 250, 0.12); }
+        .section-header .icon.green { background: rgba(52, 211, 153, 0.12); }
+        .section-header .icon.amber { background: rgba(251, 191, 36, 0.12); }
+        .section-header .icon.red { background: rgba(248, 113, 113, 0.12); }
+        .section-header .icon.cyan { background: rgba(34, 211, 238, 0.12); }
+        .section-header .icon.pink { background: rgba(244, 114, 182, 0.12); }
+
+        .section-header h2 {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .section-header .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           CARDS
+           ═══════════════════════════════════════════════════════════════════════ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+            transition: all 0.25s;
+        }
+
+        .card:hover {
+            border-color: var(--border-bright);
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card p, .card li {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           INFO CALLOUT
+           ═══════════════════════════════════════════════════════════════════════ */
+        .callout {
+            padding: 18px 22px;
+            border-radius: var(--radius-md);
+            margin: 18px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            display: flex;
+            gap: 12px;
+        }
+
+        .callout .emoji { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+        .callout.info {
+            background: rgba(91, 141, 239, 0.06);
+            border: 1px solid rgba(91, 141, 239, 0.15);
+            color: #a4c2f7;
+        }
+        .callout.warning {
+            background: rgba(251, 191, 36, 0.06);
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            color: #fcd87e;
+        }
+        .callout.success {
+            background: rgba(52, 211, 153, 0.06);
+            border: 1px solid rgba(52, 211, 153, 0.15);
+            color: #86efcb;
+        }
+        .callout.danger {
+            background: rgba(248, 113, 113, 0.06);
+            border: 1px solid rgba(248, 113, 113, 0.15);
+            color: #fca5a5;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           CODE BLOCKS
+           ═══════════════════════════════════════════════════════════════════════ */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg-code-header);
+            border-bottom: 1px solid var(--border-default);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .code-header .file-icon { color: var(--accent-amber); margin-right: 6px; }
+
+        .code-header .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            padding: 3px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .code-header .copy-btn:hover {
+            background: rgba(91, 141, 239, 0.1);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .code-content {
+            padding: 18px 20px;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-code);
+            tab-size: 2;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        /* Inline code */
+        p code, li code {
+            background: rgba(91, 141, 239, 0.1);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 12.5px;
+            color: var(--accent-blue);
+            border: 1px solid rgba(91, 141, 239, 0.12);
+        }
+
+        /* Syntax highlighting tokens */
+        .kw { color: var(--accent-purple); font-weight: 500; }
+        .str { color: var(--accent-green); }
+        .cm { color: var(--text-muted); font-style: italic; }
+        .fn { color: var(--accent-blue); }
+        .num { color: var(--accent-amber); }
+        .flag { color: var(--accent-cyan); }
+        .val { color: var(--accent-pink); }
+        .op { color: var(--text-secondary); }
+        .env { color: var(--accent-amber); }
+        .cmd { color: var(--accent-cyan); }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           PIPELINE DIAGRAM
+           ═══════════════════════════════════════════════════════════════════════ */
+        .pipeline-diagram {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            overflow-x: auto;
+            padding: 20px 0;
+            margin: 20px 0;
+        }
+
+        .pipeline-stage {
+            flex: 1;
+            min-width: 160px;
+            text-align: center;
+            position: relative;
+        }
+
+        .pipeline-stage::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            right: -2px;
+            width: 24px;
+            height: 2px;
+            background: var(--accent-blue);
+            opacity: 0.3;
+        }
+
+        .pipeline-stage:last-child::after { display: none; }
+
+        .stage-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 12px;
+            border: 2px solid var(--border-default);
+            background: var(--bg-card);
+            transition: all 0.3s;
+        }
+
+        .pipeline-stage:hover .stage-icon {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(91, 141, 239, 0.15);
+            transform: scale(1.08);
+        }
+
+        .stage-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stage-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 8px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           WORKFLOW STEPS
+           ═══════════════════════════════════════════════════════════════════════ */
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .workflow-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            transition: all 0.25s;
+        }
+
+        .workflow-card:hover {
+            border-color: var(--border-bright);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .workflow-card .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(91, 141, 239, 0.12);
+            color: var(--accent-blue);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .workflow-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .workflow-card ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .workflow-card ul li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 3px 0 3px 16px;
+            position: relative;
+        }
+
+        .workflow-card ul li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           TABLES
+           ═══════════════════════════════════════════════════════════════════════ */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-default);
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--bg-code-header);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover td { background: rgba(91, 141, 239, 0.03); }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           TAGS / LABELS
+           ═══════════════════════════════════════════════════════════════════════ */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tag.blue { background: rgba(91, 141, 239, 0.12); color: var(--accent-blue); }
+        .tag.green { background: rgba(52, 211, 153, 0.12); color: var(--accent-green); }
+        .tag.amber { background: rgba(251, 191, 36, 0.12); color: var(--accent-amber); }
+        .tag.red { background: rgba(248, 113, 113, 0.12); color: var(--accent-red); }
+        .tag.purple { background: rgba(167, 123, 250, 0.12); color: var(--accent-purple); }
+        .tag.cyan { background: rgba(34, 211, 238, 0.12); color: var(--accent-cyan); }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════════════════════════════ */
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-default);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 15px; }
+            .pipeline-diagram { flex-direction: column; gap: 12px; align-items: center; }
+            .pipeline-stage::after { display: none; }
+            .workflow-grid { grid-template-columns: 1fr; }
+            .container { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ Background Effects ═══ -->
+<div class="bg-grid"></div>
+<div class="bg-radial-glow top"></div>
+<div class="bg-radial-glow bottom"></div>
+
+<div class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         HERO
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <header class="hero">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            CI/CD Documentation
+        </div>
+        <h1>ShopWave CI/CD Pipeline</h1>
+        <p>Automated testing, building, and deployment workflows for the ShopWave e-commerce platform using GitHub Actions</p>
+    </header>
+
+    <!-- ═══ Quick Nav ═══ -->
+    <nav class="quick-nav">
+        <a href="#overview">📋 Overview</a>
+        <a href="#diagram">🔄 Pipeline Flow</a>
+        <a href="#backend-ci">⚙️ Backend CI</a>
+        <a href="#frontend-ci">🎨 Frontend CI</a>
+        <a href="#mcp-ci">🔌 MCP Servers CI</a>
+        <a href="#deploy">🚀 Deployment</a>
+        <a href="#secrets">🔐 Secrets</a>
+        <a href="#branching">🌿 Branching</a>
+        <a href="#monitoring">📡 Monitoring</a>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 1 — OVERVIEW
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="overview" class="section">
+        <div class="section-header">
+            <div class="icon blue">📋</div>
+            <div>
+                <h2>Pipeline Overview</h2>
+                <div class="subtitle">Architecture and strategy for ShopWave CI/CD</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>What This Pipeline Covers</h3>
+            <p>ShopWave is a multi-service platform with <strong>9 deployable units</strong>. This pipeline automates the full lifecycle:</p>
+            <br>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Type</th>
+                            <th>Deploy Target</th>
+                            <th>Trigger</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Backend</strong></td>
+                            <td><span class="tag blue">FastAPI</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>backend/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Frontend</strong></td>
+                            <td><span class="tag green">React SPA</span></td>
+                            <td>Vercel</td>
+                            <td>Push to <code>main</code> + <code>frontend/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-inventory</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/inventory/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-payments</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/payments/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-search</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/search/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-notifications</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/notifications/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-analytics</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/analytics/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mcp-content</strong></td>
+                            <td><span class="tag purple">MCP Server</span></td>
+                            <td>Railway</td>
+                            <td>Push to <code>main</code> + <code>mcp-servers/content/**</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database</strong></td>
+                            <td><span class="tag cyan">PostgreSQL 18</span></td>
+                            <td>Neon (Managed)</td>
+                            <td>Migrations via backend deploy</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="callout info">
+            <span class="emoji">💡</span>
+            <div><strong>Path-based triggers</strong> ensure that only affected services are rebuilt and redeployed when code changes. A change to <code>frontend/</code> will not trigger backend CI.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 2 — PIPELINE DIAGRAM
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="diagram" class="section">
+        <div class="section-header">
+            <div class="icon purple">🔄</div>
+            <div>
+                <h2>Pipeline Flow</h2>
+                <div class="subtitle">From commit to production in under 5 minutes</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>High-Level CI/CD Stages</h3>
+            <div class="pipeline-diagram">
+                <div class="pipeline-stage">
+                    <div class="stage-icon">📝</div>
+                    <div class="stage-label">Commit</div>
+                    <div class="stage-desc">Push to branch or open PR</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">🔍</div>
+                    <div class="stage-label">Lint & Check</div>
+                    <div class="stage-desc">Ruff, ESLint, Pyright type checks</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">🧪</div>
+                    <div class="stage-label">Test</div>
+                    <div class="stage-desc">Pytest + Vitest with coverage</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">🏗️</div>
+                    <div class="stage-label">Build</div>
+                    <div class="stage-desc">Docker images + Vite bundle</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">🚀</div>
+                    <div class="stage-label">Deploy</div>
+                    <div class="stage-desc">Railway + Vercel + Neon migrations</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">✅</div>
+                    <div class="stage-label">Verify</div>
+                    <div class="stage-desc">Health checks + smoke tests</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="workflow-grid">
+            <div class="workflow-card">
+                <div class="step-number">1</div>
+                <h4>PR Workflow (CI)</h4>
+                <ul>
+                    <li>Triggered on pull requests to <code>main</code></li>
+                    <li>Runs lint, type-check, and tests in parallel</li>
+                    <li>Builds Docker images to validate Dockerfiles</li>
+                    <li>Posts check status back to the PR</li>
+                    <li>Blocks merge if any step fails</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="step-number">2</div>
+                <h4>Main Branch Workflow (CD)</h4>
+                <ul>
+                    <li>Triggered on merge/push to <code>main</code></li>
+                    <li>Runs full CI suite first ↑</li>
+                    <li>Deploys affected services only</li>
+                    <li>Runs Alembic migrations on Neon</li>
+                    <li>Executes post-deploy health checks</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 3 — BACKEND CI
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="backend-ci" class="section">
+        <div class="section-header">
+            <div class="icon green">⚙️</div>
+            <div>
+                <h2>Backend CI Workflow</h2>
+                <div class="subtitle">.github/workflows/backend-ci.yml</div>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="file-icon">📄</span> .github/workflows/backend-ci.yml</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-content">
+<pre><span class="cm"># ──────────────────────────────────────────────────────────────</span>
+<span class="cm"># ShopWave Backend CI — FastAPI + PostgreSQL</span>
+<span class="cm"># ──────────────────────────────────────────────────────────────</span>
+
+<span class="kw">name:</span> <span class="str">Backend CI</span>
+
+<span class="kw">on:</span>
+  <span class="kw">push:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span>
+      - <span class="str">'backend/**'</span>
+      - <span class="str">'.github/workflows/backend-ci.yml'</span>
+  <span class="kw">pull_request:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span>
+      - <span class="str">'backend/**'</span>
+
+<span class="kw">env:</span>
+  <span class="env">PYTHON_VERSION</span>: <span class="str">"3.12"</span>
+  <span class="env">DATABASE_URL</span>: <span class="str">postgresql+asyncpg://test:test@localhost:5432/test_db</span>
+
+<span class="kw">jobs:</span>
+  <span class="fn">lint-and-typecheck:</span>
+    <span class="kw">name:</span> <span class="str">🔍 Lint & Type Check</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Set up Python</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-python@v5</span>
+        <span class="kw">with:</span>
+          <span class="kw">python-version:</span> <span class="env">${{ env.PYTHON_VERSION }}</span>
+
+      - <span class="kw">name:</span> <span class="str">Install dependencies</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd backend
+          pip install -e ".[dev]"
+
+      - <span class="kw">name:</span> <span class="str">Ruff lint</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && ruff check .</span>
+
+      - <span class="kw">name:</span> <span class="str">Ruff format check</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && ruff format --check .</span>
+
+      - <span class="kw">name:</span> <span class="str">Pyright type check</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && pyright</span>
+
+  <span class="fn">test:</span>
+    <span class="kw">name:</span> <span class="str">🧪 Tests</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> <span class="val">lint-and-typecheck</span>
+
+    <span class="kw">services:</span>
+      <span class="fn">postgres:</span>
+        <span class="kw">image:</span> <span class="str">postgres:18-alpine</span>
+        <span class="kw">env:</span>
+          <span class="env">POSTGRES_USER</span>: <span class="str">test</span>
+          <span class="env">POSTGRES_PASSWORD</span>: <span class="str">test</span>
+          <span class="env">POSTGRES_DB</span>: <span class="str">test_db</span>
+        <span class="kw">ports:</span> [<span class="str">"5432:5432"</span>]
+        <span class="kw">options:</span> <span class="str">--health-cmd "pg_isready" --health-interval 10s --health-timeout 5s --health-retries 5</span>
+
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Set up Python</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-python@v5</span>
+        <span class="kw">with:</span>
+          <span class="kw">python-version:</span> <span class="env">${{ env.PYTHON_VERSION }}</span>
+          <span class="kw">cache:</span> <span class="str">"pip"</span>
+
+      - <span class="kw">name:</span> <span class="str">Install dependencies</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd backend
+          pip install -e ".[dev]"
+
+      - <span class="kw">name:</span> <span class="str">Run migrations</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && alembic upgrade head</span>
+        <span class="kw">env:</span>
+          <span class="env">SECRET_KEY</span>: <span class="str">test-secret-key-for-ci</span>
+
+      - <span class="kw">name:</span> <span class="str">Run tests with coverage</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd backend
+          pytest --cov=app --cov-report=xml --cov-report=term-missing -v
+        <span class="kw">env:</span>
+          <span class="env">SECRET_KEY</span>: <span class="str">test-secret-key-for-ci</span>
+          <span class="env">MCP_INTERNAL_API_KEY</span>: <span class="str">test-mcp-key</span>
+
+      - <span class="kw">name:</span> <span class="str">Upload coverage</span>
+        <span class="kw">if:</span> <span class="val">always()</span>
+        <span class="kw">uses:</span> <span class="val">codecov/codecov-action@v4</span>
+        <span class="kw">with:</span>
+          <span class="kw">file:</span> <span class="str">backend/coverage.xml</span>
+          <span class="kw">flags:</span> <span class="str">backend</span>
+
+  <span class="fn">docker-build:</span>
+    <span class="kw">name:</span> <span class="str">🏗️ Docker Build</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> <span class="val">test</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Build Docker image</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          docker build -t shopwave-backend:ci \
+            --target runtime \
+            ./backend</pre>
+            </div>
+        </div>
+
+        <div class="callout success">
+            <span class="emoji">✅</span>
+            <div><strong>PostgreSQL Service Container:</strong> GitHub Actions spins up a real PostgreSQL 18 instance for integration tests — same version as production.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 4 — FRONTEND CI
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="frontend-ci" class="section">
+        <div class="section-header">
+            <div class="icon amber">🎨</div>
+            <div>
+                <h2>Frontend CI Workflow</h2>
+                <div class="subtitle">.github/workflows/frontend-ci.yml</div>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="file-icon">📄</span> .github/workflows/frontend-ci.yml</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-content">
+<pre><span class="cm"># ──────────────────────────────────────────────────────────────</span>
+<span class="cm"># ShopWave Frontend CI — React 19 + Vite 6</span>
+<span class="cm"># ──────────────────────────────────────────────────────────────</span>
+
+<span class="kw">name:</span> <span class="str">Frontend CI</span>
+
+<span class="kw">on:</span>
+  <span class="kw">push:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span> [<span class="str">'frontend/**'</span>]
+  <span class="kw">pull_request:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span> [<span class="str">'frontend/**'</span>]
+
+<span class="kw">jobs:</span>
+  <span class="fn">lint-and-test:</span>
+    <span class="kw">name:</span> <span class="str">🔍 Lint & Test</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Setup Node.js</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-node@v4</span>
+        <span class="kw">with:</span>
+          <span class="kw">node-version:</span> <span class="str">"22"</span>
+          <span class="kw">cache:</span> <span class="str">"npm"</span>
+          <span class="kw">cache-dependency-path:</span> <span class="str">frontend/package-lock.json</span>
+
+      - <span class="kw">name:</span> <span class="str">Install dependencies</span>
+        <span class="kw">run:</span> <span class="cmd">cd frontend && npm ci</span>
+
+      - <span class="kw">name:</span> <span class="str">ESLint check</span>
+        <span class="kw">run:</span> <span class="cmd">cd frontend && npx eslint src/ --max-warnings 0</span>
+
+      - <span class="kw">name:</span> <span class="str">Run unit tests</span>
+        <span class="kw">run:</span> <span class="cmd">cd frontend && npx vitest run --coverage</span>
+
+      - <span class="kw">name:</span> <span class="str">Upload coverage</span>
+        <span class="kw">uses:</span> <span class="val">codecov/codecov-action@v4</span>
+        <span class="kw">with:</span>
+          <span class="kw">flags:</span> <span class="str">frontend</span>
+
+  <span class="fn">build:</span>
+    <span class="kw">name:</span> <span class="str">🏗️ Vite Build</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> <span class="val">lint-and-test</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Setup Node.js</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-node@v4</span>
+        <span class="kw">with:</span>
+          <span class="kw">node-version:</span> <span class="str">"22"</span>
+          <span class="kw">cache:</span> <span class="str">"npm"</span>
+          <span class="kw">cache-dependency-path:</span> <span class="str">frontend/package-lock.json</span>
+
+      - <span class="kw">name:</span> <span class="str">Install & build</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd frontend
+          npm ci
+          npm run build
+        <span class="kw">env:</span>
+          <span class="env">VITE_API_BASE_URL</span>: <span class="str">https://api.shopwave.app</span>
+
+      - <span class="kw">name:</span> <span class="str">Check bundle size</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          echo "📦 Build output size:"
+          du -sh frontend/dist/
+          echo "📄 JS chunks:"
+          find frontend/dist/assets -name "*.js" -exec ls -lh {} \;</pre>
+            </div>
+        </div>
+
+        <div class="callout info">
+            <span class="emoji">📦</span>
+            <div><strong>Bundle Size Tracking:</strong> The workflow logs the total build output and individual JS chunk sizes. Consider adding a budget threshold (e.g., &lt;300KB gzipped).</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 5 — MCP SERVERS CI
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-ci" class="section">
+        <div class="section-header">
+            <div class="icon cyan">🔌</div>
+            <div>
+                <h2>MCP Servers CI</h2>
+                <div class="subtitle">.github/workflows/mcp-ci.yml — Matrix strategy for 6 servers</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Matrix Build Strategy</h3>
+            <p>Instead of 6 separate workflow files, a <strong>single matrix workflow</strong> tests all MCP servers in parallel. Each server gets its own isolated job but shares the same CI logic.</p>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="file-icon">📄</span> .github/workflows/mcp-ci.yml</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-content">
+<pre><span class="cm"># ──────────────────────────────────────────────────────────────</span>
+<span class="cm"># ShopWave MCP Servers CI — Matrix build for all 6 servers</span>
+<span class="cm"># ──────────────────────────────────────────────────────────────</span>
+
+<span class="kw">name:</span> <span class="str">MCP Servers CI</span>
+
+<span class="kw">on:</span>
+  <span class="kw">push:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span> [<span class="str">'mcp-servers/**'</span>]
+  <span class="kw">pull_request:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+    <span class="kw">paths:</span> [<span class="str">'mcp-servers/**'</span>]
+
+<span class="kw">jobs:</span>
+  <span class="fn">test-mcp-servers:</span>
+    <span class="kw">name:</span> <span class="str">🔌 ${{ matrix.server }}</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">strategy:</span>
+      <span class="kw">fail-fast:</span> <span class="val">false</span>  <span class="cm"># Don't cancel other servers if one fails</span>
+      <span class="kw">matrix:</span>
+        <span class="kw">server:</span>
+          - <span class="str">inventory</span>
+          - <span class="str">payments</span>
+          - <span class="str">search</span>
+          - <span class="str">notifications</span>
+          - <span class="str">analytics</span>
+          - <span class="str">content</span>
+
+    <span class="kw">services:</span>
+      <span class="fn">postgres:</span>
+        <span class="kw">image:</span> <span class="str">postgres:18-alpine</span>
+        <span class="kw">env:</span>
+          <span class="env">POSTGRES_USER</span>: <span class="str">test</span>
+          <span class="env">POSTGRES_PASSWORD</span>: <span class="str">test</span>
+          <span class="env">POSTGRES_DB</span>: <span class="str">mcp_test_db</span>
+        <span class="kw">ports:</span> [<span class="str">"5432:5432"</span>]
+        <span class="kw">options:</span> <span class="str">--health-cmd "pg_isready" --health-interval 10s</span>
+
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Set up Python 3.12</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-python@v5</span>
+        <span class="kw">with:</span>
+          <span class="kw">python-version:</span> <span class="str">"3.12"</span>
+
+      - <span class="kw">name:</span> <span class="str">Install dependencies</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd mcp-servers/${{ matrix.server }}
+          pip install -e ".[dev]"
+
+      - <span class="kw">name:</span> <span class="str">Lint with Ruff</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd mcp-servers/${{ matrix.server }}
+          ruff check .
+
+      - <span class="kw">name:</span> <span class="str">Run tests</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          cd mcp-servers/${{ matrix.server }}
+          pytest tests/ -v --tb=short
+        <span class="kw">env:</span>
+          <span class="env">DATABASE_URL</span>: <span class="str">postgresql://test:test@localhost:5432/mcp_test_db</span>
+          <span class="env">MCP_INTERNAL_API_KEY</span>: <span class="str">test-mcp-key</span>
+          <span class="env">RAZORPAY_KEY_ID</span>: <span class="str">rzp_test_ci</span>
+          <span class="env">RAZORPAY_KEY_SECRET</span>: <span class="str">test_secret_ci</span>
+          <span class="env">SENDGRID_API_KEY</span>: <span class="str">SG.test_ci</span>
+          <span class="env">ANTHROPIC_API_KEY</span>: <span class="str">sk-ant-test_ci</span>
+
+      - <span class="kw">name:</span> <span class="str">Build Docker image</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          docker build -t shopwave-mcp-${{ matrix.server }}:ci \
+            ./mcp-servers/${{ matrix.server }}</pre>
+            </div>
+        </div>
+
+        <div class="callout warning">
+            <span class="emoji">⚠️</span>
+            <div><strong>External API Keys in CI:</strong> Use dummy/test keys in CI. The <code>mcp-search</code> server needs pgvector extension installed — add <code>CREATE EXTENSION IF NOT EXISTS vector;</code> to a CI setup step.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 6 — DEPLOYMENT
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="deploy" class="section">
+        <div class="section-header">
+            <div class="icon red">🚀</div>
+            <div>
+                <h2>Deployment Workflow</h2>
+                <div class="subtitle">.github/workflows/deploy.yml — Production auto-deploy</div>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="file-icon">📄</span> .github/workflows/deploy.yml</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-content">
+<pre><span class="cm"># ──────────────────────────────────────────────────────────────</span>
+<span class="cm"># ShopWave Production Deployment</span>
+<span class="cm"># Runs ONLY on merge to main, after CI passes</span>
+<span class="cm"># ──────────────────────────────────────────────────────────────</span>
+
+<span class="kw">name:</span> <span class="str">Deploy to Production</span>
+
+<span class="kw">on:</span>
+  <span class="kw">push:</span>
+    <span class="kw">branches:</span> [<span class="str">main</span>]
+
+<span class="kw">concurrency:</span>
+  <span class="kw">group:</span> <span class="str">production-deploy</span>
+  <span class="kw">cancel-in-progress:</span> <span class="val">false</span>  <span class="cm"># Never cancel an in-progress deploy</span>
+
+<span class="kw">jobs:</span>
+  <span class="cm"># ── Database Migrations ─────────────────────────────</span>
+  <span class="fn">migrate:</span>
+    <span class="kw">name:</span> <span class="str">🗃️ Run Migrations</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Set up Python</span>
+        <span class="kw">uses:</span> <span class="val">actions/setup-python@v5</span>
+        <span class="kw">with:</span>
+          <span class="kw">python-version:</span> <span class="str">"3.12"</span>
+
+      - <span class="kw">name:</span> <span class="str">Install Alembic</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && pip install -e .</span>
+
+      - <span class="kw">name:</span> <span class="str">Run Alembic migrations on Neon</span>
+        <span class="kw">run:</span> <span class="cmd">cd backend && alembic upgrade head</span>
+        <span class="kw">env:</span>
+          <span class="env">DATABASE_URL</span>: <span class="str">${{ secrets.NEON_DATABASE_URL }}</span>
+          <span class="env">SECRET_KEY</span>: <span class="str">${{ secrets.SECRET_KEY }}</span>
+
+  <span class="cm"># ── Deploy Backend to Railway ────────────────────────</span>
+  <span class="fn">deploy-backend:</span>
+    <span class="kw">name:</span> <span class="str">🚂 Deploy Backend</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> <span class="val">migrate</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Install Railway CLI</span>
+        <span class="kw">run:</span> <span class="cmd">npm install -g @railway/cli</span>
+
+      - <span class="kw">name:</span> <span class="str">Deploy to Railway</span>
+        <span class="kw">run:</span> <span class="cmd">railway up --service backend --detach</span>
+        <span class="kw">env:</span>
+          <span class="env">RAILWAY_TOKEN</span>: <span class="str">${{ secrets.RAILWAY_TOKEN }}</span>
+
+      - <span class="kw">name:</span> <span class="str">Wait for deploy & health check</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          sleep 30
+          curl --fail --max-time 10 \
+            ${{ secrets.BACKEND_URL }}/health \
+            || exit 1
+          echo "✅ Backend is healthy"
+
+  <span class="cm"># ── Deploy MCP Servers to Railway ─────────────────────</span>
+  <span class="fn">deploy-mcp:</span>
+    <span class="kw">name:</span> <span class="str">🔌 Deploy MCP Servers</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> <span class="val">migrate</span>
+    <span class="kw">strategy:</span>
+      <span class="kw">matrix:</span>
+        <span class="kw">server:</span>
+          - <span class="str">inventory</span>
+          - <span class="str">payments</span>
+          - <span class="str">search</span>
+          - <span class="str">notifications</span>
+          - <span class="str">analytics</span>
+          - <span class="str">content</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">uses:</span> <span class="val">actions/checkout@v4</span>
+
+      - <span class="kw">name:</span> <span class="str">Install Railway CLI</span>
+        <span class="kw">run:</span> <span class="cmd">npm install -g @railway/cli</span>
+
+      - <span class="kw">name:</span> <span class="str">Deploy ${{ matrix.server }}</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          railway up \
+            --service mcp-${{ matrix.server }} \
+            --detach
+        <span class="kw">env:</span>
+          <span class="env">RAILWAY_TOKEN</span>: <span class="str">${{ secrets.RAILWAY_TOKEN }}</span>
+
+  <span class="cm"># ── Post-deploy Verification ─────────────────────────</span>
+  <span class="fn">verify:</span>
+    <span class="kw">name:</span> <span class="str">✅ Post-Deploy Smoke Tests</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">needs:</span> [<span class="val">deploy-backend</span>, <span class="val">deploy-mcp</span>]
+    <span class="kw">steps:</span>
+      - <span class="kw">name:</span> <span class="str">Health check — Backend</span>
+        <span class="kw">run:</span> <span class="cmd">curl --fail ${{ secrets.BACKEND_URL }}/health</span>
+
+      - <span class="kw">name:</span> <span class="str">Health check — Frontend</span>
+        <span class="kw">run:</span> <span class="cmd">curl --fail ${{ secrets.FRONTEND_URL }}/health</span>
+
+      - <span class="kw">name:</span> <span class="str">Smoke test — Products API</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            ${{ secrets.BACKEND_URL }}/api/v1/products?limit=1)
+          [ "$response" = "200" ] && echo "✅ Products API OK" || exit 1
+
+      - <span class="kw">name:</span> <span class="str">Notify on success</span>
+        <span class="kw">if:</span> <span class="val">success()</span>
+        <span class="kw">run:</span> <span class="cmd">echo "🚀 All services deployed and verified!"</span>
+
+      - <span class="kw">name:</span> <span class="str">Notify on failure</span>
+        <span class="kw">if:</span> <span class="val">failure()</span>
+        <span class="kw">run:</span> <span class="cmd">echo "❌ Deployment verification failed — check logs"</span></pre>
+            </div>
+        </div>
+
+        <div class="callout danger">
+            <span class="emoji">🚨</span>
+            <div><strong>Concurrency lock:</strong> The <code>concurrency</code> setting ensures only one deploy runs at a time. <code>cancel-in-progress: false</code> prevents abandoning a half-deployed state.</div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 7 — SECRETS
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="secrets" class="section">
+        <div class="section-header">
+            <div class="icon pink">🔐</div>
+            <div>
+                <h2>Required GitHub Secrets</h2>
+                <div class="subtitle">Settings → Secrets and variables → Actions</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Secret Name</th>
+                            <th>Used By</th>
+                            <th>Where to Get</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>NEON_DATABASE_URL</code></td>
+                            <td><span class="tag cyan">Migrations</span></td>
+                            <td>Neon Dashboard → Connection String</td>
+                        </tr>
+                        <tr>
+                            <td><code>RAILWAY_TOKEN</code></td>
+                            <td><span class="tag blue">Backend + MCP Deploy</span></td>
+                            <td>Railway → Account → Tokens → Create</td>
+                        </tr>
+                        <tr>
+                            <td><code>SECRET_KEY</code></td>
+                            <td><span class="tag green">Backend JWT</span></td>
+                            <td><code>python -c "import secrets; print(secrets.token_hex(32))"</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>MCP_INTERNAL_API_KEY</code></td>
+                            <td><span class="tag purple">All MCP servers</span></td>
+                            <td><code>python -c "import secrets; print(secrets.token_hex(32))"</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>RAZORPAY_KEY_ID</code></td>
+                            <td><span class="tag amber">mcp-payments</span></td>
+                            <td>Razorpay Dashboard → Settings → API Keys</td>
+                        </tr>
+                        <tr>
+                            <td><code>RAZORPAY_KEY_SECRET</code></td>
+                            <td><span class="tag amber">mcp-payments</span></td>
+                            <td>Razorpay Dashboard → Settings → API Keys</td>
+                        </tr>
+                        <tr>
+                            <td><code>SENDGRID_API_KEY</code></td>
+                            <td><span class="tag green">mcp-notifications</span></td>
+                            <td>SendGrid → Settings → API Keys → Create</td>
+                        </tr>
+                        <tr>
+                            <td><code>ANTHROPIC_API_KEY</code></td>
+                            <td><span class="tag purple">mcp-search, mcp-content</span></td>
+                            <td>Anthropic Console → API Keys</td>
+                        </tr>
+                        <tr>
+                            <td><code>BACKEND_URL</code></td>
+                            <td><span class="tag blue">Smoke tests</span></td>
+                            <td>Railway service URL (e.g., <code>https://shopwave-api.up.railway.app</code>)</td>
+                        </tr>
+                        <tr>
+                            <td><code>FRONTEND_URL</code></td>
+                            <td><span class="tag green">Smoke tests</span></td>
+                            <td>Vercel deployment URL (e.g., <code>https://shopwave.vercel.app</code>)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 8 — BRANCHING STRATEGY
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="branching" class="section">
+        <div class="section-header">
+            <div class="icon green">🌿</div>
+            <div>
+                <h2>Branching Strategy</h2>
+                <div class="subtitle">GitHub Flow — simple and effective</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Recommended: GitHub Flow</h3>
+            <p>For a project of ShopWave's scale, <strong>GitHub Flow</strong> strikes the right balance between simplicity and safety:</p>
+
+            <div class="table-wrapper" style="margin-top: 16px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Branch</th>
+                            <th>Purpose</th>
+                            <th>Deploys To</th>
+                            <th>Protection</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>main</code></td>
+                            <td>Production-ready code</td>
+                            <td>🚀 Production (auto)</td>
+                            <td>Branch protection, required CI, 1 review</td>
+                        </tr>
+                        <tr>
+                            <td><code>feat/*</code></td>
+                            <td>New features</td>
+                            <td>🔍 Preview (Vercel)</td>
+                            <td>None — developer branch</td>
+                        </tr>
+                        <tr>
+                            <td><code>fix/*</code></td>
+                            <td>Bug fixes</td>
+                            <td>🔍 Preview (Vercel)</td>
+                            <td>None — developer branch</td>
+                        </tr>
+                        <tr>
+                            <td><code>hotfix/*</code></td>
+                            <td>Critical production fixes</td>
+                            <td>🚀 Production (fast)</td>
+                            <td>Admin bypass + post-merge review</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="callout info">
+            <span class="emoji">🔒</span>
+            <div><strong>Branch Protection Rules</strong> for <code>main</code>: Require status checks to pass (Backend CI + Frontend CI + MCP CI), require at least 1 approving review, dismiss stale reviews, restrict force pushes.</div>
+        </div>
+
+        <div class="card">
+            <h3>Neon Database Branching</h3>
+            <p>Neon's killer feature is <strong>database branching</strong>. Each PR can get its own database copy:</p>
+            <div class="code-block" style="margin: 14px 0;">
+                <div class="code-header">
+                    <span><span class="file-icon">📄</span> PR Preview Database Workflow (excerpt)</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <div class="code-content">
+<pre><span class="cm"># In your PR workflow, add:</span>
+
+- <span class="kw">name:</span> <span class="str">Create Neon branch for PR</span>
+  <span class="kw">uses:</span> <span class="val">neondatabase/create-branch-action@v5</span>
+  <span class="kw">id:</span> <span class="val">neon-branch</span>
+  <span class="kw">with:</span>
+    <span class="kw">project_id:</span> <span class="str">${{ secrets.NEON_PROJECT_ID }}</span>
+    <span class="kw">branch_name:</span> <span class="str">pr-${{ github.event.number }}</span>
+    <span class="kw">api_key:</span> <span class="str">${{ secrets.NEON_API_KEY }}</span>
+
+- <span class="kw">name:</span> <span class="str">Run tests against PR database</span>
+  <span class="kw">run:</span> <span class="cmd">cd backend && pytest</span>
+  <span class="kw">env:</span>
+    <span class="env">DATABASE_URL</span>: <span class="str">${{ steps.neon-branch.outputs.db_url }}</span></pre>
+                </div>
+            </div>
+            <p style="margin-top: 8px; font-size: 13px; color: var(--text-muted);">Each PR tests against an isolated database branch — no interference between developers.</p>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION 9 — MONITORING
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="monitoring" class="section">
+        <div class="section-header">
+            <div class="icon amber">📡</div>
+            <div>
+                <h2>Post-Deploy Monitoring</h2>
+                <div class="subtitle">Ensuring production stays healthy</div>
+            </div>
+        </div>
+
+        <div class="workflow-grid">
+            <div class="workflow-card">
+                <div class="step-number">1</div>
+                <h4>Uptime Monitoring</h4>
+                <ul>
+                    <li><strong>Better Stack</strong> pings /health every 60s</li>
+                    <li>Alerts via Slack, email, SMS on downtime</li>
+                    <li>Public status page for customers</li>
+                    <li>Monitor all 8 services independently</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="step-number">2</div>
+                <h4>Error Tracking</h4>
+                <ul>
+                    <li><strong>Sentry</strong> SDK in FastAPI + React</li>
+                    <li>Capture unhandled exceptions with stack traces</li>
+                    <li>Release tracking tied to Git commits</li>
+                    <li>Performance monitoring (slow queries, endpoints)</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="step-number">3</div>
+                <h4>Log Aggregation</h4>
+                <ul>
+                    <li>Structured JSON logs from all services</li>
+                    <li><strong>Better Stack Logs</strong> for centralized search</li>
+                    <li>Filter by service, severity, request ID</li>
+                    <li>Retained for 30 days minimum</li>
+                </ul>
+            </div>
+            <div class="workflow-card">
+                <div class="step-number">4</div>
+                <h4>Scheduled Health Check</h4>
+                <ul>
+                    <li>GitHub Actions <code>cron</code> workflow every 5 min</li>
+                    <li>Checks all endpoints + MCP servers</li>
+                    <li>Opens GitHub Issue on repeated failure</li>
+                    <li>Runs outside of deploy pipeline</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="file-icon">📄</span> .github/workflows/health-check.yml</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-content">
+<pre><span class="cm"># ──────────────────────────────────────────────────────────────</span>
+<span class="cm"># Scheduled Health Check — runs every 5 minutes</span>
+<span class="cm"># ──────────────────────────────────────────────────────────────</span>
+
+<span class="kw">name:</span> <span class="str">Health Check</span>
+
+<span class="kw">on:</span>
+  <span class="kw">schedule:</span>
+    - <span class="kw">cron:</span> <span class="str">"*/5 * * * *"</span>
+  <span class="kw">workflow_dispatch:</span>  <span class="cm"># Manual trigger</span>
+
+<span class="kw">jobs:</span>
+  <span class="fn">check:</span>
+    <span class="kw">name:</span> <span class="str">🏥 Health Check</span>
+    <span class="kw">runs-on:</span> <span class="str">ubuntu-latest</span>
+    <span class="kw">steps:</span>
+      - <span class="kw">name:</span> <span class="str">Check Backend API</span>
+        <span class="kw">run:</span> <span class="cmd">curl --fail --max-time 10 ${{ secrets.BACKEND_URL }}/health</span>
+
+      - <span class="kw">name:</span> <span class="str">Check Frontend</span>
+        <span class="kw">run:</span> <span class="cmd">curl --fail --max-time 10 ${{ secrets.FRONTEND_URL }}/health</span>
+
+      - <span class="kw">name:</span> <span class="str">Check Products Endpoint</span>
+        <span class="kw">run:</span> <span class="cmd">|</span>
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.BACKEND_URL }}/api/v1/products?limit=1")
+          [ "$status" = "200" ] || exit 1
+
+      - <span class="kw">name:</span> <span class="str">Create issue on failure</span>
+        <span class="kw">if:</span> <span class="val">failure()</span>
+        <span class="kw">uses:</span> <span class="val">actions/github-script@v7</span>
+        <span class="kw">with:</span>
+          <span class="kw">script:</span> <span class="cmd">|</span>
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Production health check failed',
+              body: `Health check failed at ${new Date().toISOString()}.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['bug', 'production', 'urgent']
+            })</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         FOOTER
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <footer>
+        <p>ShopWave E-Commerce · CI/CD Pipeline Documentation · Built with ❤️ for production excellence</p>
+        <p style="margin-top: 8px;">
+            <a href="https://github.com/features/actions">GitHub Actions</a> ·
+            <a href="https://railway.app">Railway</a> ·
+            <a href="https://vercel.com">Vercel</a> ·
+            <a href="https://neon.tech">Neon</a>
+        </p>
+    </footer>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+    // Copy-to-clipboard for code blocks
+    function copyCode(btn) {
+        const codeBlock = btn.closest('.code-block');
+        const pre = codeBlock.querySelector('pre');
+        const text = pre.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = 'Copied!';
+            btn.style.color = '#34d399';
+            btn.style.borderColor = '#34d399';
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }, 2000);
+        });
+    }
+
+    // Smooth reveal on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.section').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.5s, transform 0.5s';
+        observer.observe(el);
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,2479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopWave — Technical Documentation</title>
+  <meta name="description" content="Complete technical reference for the ShopWave e-commerce platform: architecture, APIs, MCP servers, database schema, Docker, and implementation guide." />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fa;
+      --bg-code: #f4f4f5;
+      --border: #e4e4e7;
+      --border-light: #f0f0f0;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --text-light: #a1a1aa;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --accent-dark: #1d4ed8;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --green-border: #bbf7d0;
+      --yellow: #b45309;
+      --yellow-bg: #fffbeb;
+      --yellow-border: #fde68a;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --purple: #7c3aed;
+      --purple-bg: #f5f3ff;
+      --purple-border: #ddd6fe;
+      --orange: #c2410c;
+      --orange-bg: #fff7ed;
+      --orange-border: #fed7aa;
+      --sidebar-w: 260px;
+      --header-h: 56px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── TOP HEADER ─────────────────────────────────────────────────────────── */
+    .site-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      z-index: 100;
+    }
+    .logo { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+    .logo span { color: var(--accent); }
+    .header-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+    }
+    .header-meta { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+
+    /* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      margin-top: var(--header-h);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* ── SIDEBAR ─────────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg-alt);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      padding: 16px 0 32px;
+    }
+    .sidebar-group { margin-bottom: 4px; }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      padding: 8px 16px 4px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 5px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all .15s;
+    }
+    .sidebar a:hover { color: var(--accent); background: var(--accent-light); border-left-color: var(--accent); }
+    .sidebar a.active { color: var(--accent); font-weight: 600; border-left-color: var(--accent); background: var(--accent-light); }
+
+    /* ── MAIN CONTENT ────────────────────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      padding: 32px 48px 64px;
+      max-width: 960px;
+      min-width: 0;
+    }
+
+    /* ── TYPOGRAPHY ──────────────────────────────────────────────────────────── */
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; color: var(--text); letter-spacing: -.4px; }
+    h2 { font-size: 22px; font-weight: 700; margin: 48px 0 16px; color: var(--text); letter-spacing: -.3px; padding-top: 8px; border-top: 1px solid var(--border); }
+    h3 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; color: var(--text); }
+    h4 { font-size: 14px; font-weight: 700; margin: 20px 0 6px; color: var(--text); }
+    p { margin-bottom: 12px; color: var(--text-muted); }
+    strong { color: var(--text); font-weight: 600; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin: 8px 0 12px 20px; }
+    li { margin-bottom: 4px; color: var(--text-muted); }
+    li strong { color: var(--text); }
+
+    /* ── PAGE INTRO ──────────────────────────────────────────────────────────── */
+    .page-intro { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 8px; }
+    .page-intro p { font-size: 15px; color: var(--text-muted); max-width: 700px; }
+
+    /* ── SECTION ─────────────────────────────────────────────────────────────── */
+    section { scroll-margin-top: calc(var(--header-h) + 16px); }
+
+    /* ── CODE ────────────────────────────────────────────────────────────────── */
+    code {
+      font-family: 'SFMono-Regular', 'Fira Code', 'Fira Mono', Consolas, monospace;
+      font-size: 12.5px;
+      background: var(--bg-code);
+      color: #c7254e;
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    pre {
+      background: #1a1b26;
+      color: #c0caf5;
+      padding: 18px 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      line-height: 1.7;
+      margin: 10px 0 16px;
+      border: 1px solid #2a2b3d;
+    }
+    pre code { background: none; color: inherit; padding: 0; border: none; font-size: inherit; }
+    .pre-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 4px;
+    }
+
+    /* syntax token colours */
+    .tok-comment { color: #565f89; }
+    .tok-key { color: #7aa2f7; }
+    .tok-string { color: #9ece6a; }
+    .tok-type { color: #e0af68; }
+    .tok-kw { color: #bb9af7; }
+    .tok-num { color: #ff9e64; }
+    .tok-fn { color: #7dcfff; }
+
+    /* ── BADGES / PILLS ──────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .badge-get    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .badge-post   { background: var(--accent-light); color: var(--accent); border: 1px solid #93c5fd; }
+    .badge-put    { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+    .badge-patch  { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+    .badge-delete { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+    .badge-admin  { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+    .badge-auth   { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+    .badge-pub    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .badge-info   { background: var(--accent-light); color: var(--accent); border: 1px solid #93c5fd; }
+    .badge-warn   { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+    .badge-danger { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+    .badge-ok     { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .badge-neutral{ background: var(--bg-code); color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* ── CALLOUT BOXES ───────────────────────────────────────────────────────── */
+    .callout {
+      border-left: 3px solid;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+    .callout-info   { background: var(--accent-light); border-color: var(--accent); }
+    .callout-warn   { background: var(--yellow-bg); border-color: #f59e0b; }
+    .callout-danger { background: var(--red-bg); border-color: var(--red); }
+    .callout-ok     { background: var(--green-bg); border-color: var(--green); }
+    .callout-label  { font-weight: 700; color: var(--text); margin-bottom: 4px; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .callout p { margin: 0; color: var(--text); }
+
+    /* ── TABLES ──────────────────────────────────────────────────────────────── */
+    .tbl-wrap { overflow-x: auto; margin: 12px 0 16px; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      background: var(--bg-alt);
+      padding: 9px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; color: var(--text-muted); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-alt); }
+    .td-name { color: var(--text); font-weight: 600; font-family: 'SFMono-Regular', monospace; font-size: 12px; }
+
+    /* ── API ENDPOINT CARD ───────────────────────────────────────────────────── */
+    .ep-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .ep-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--border);
+    }
+    .ep-path {
+      font-family: 'SFMono-Regular', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .ep-desc { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+    .ep-body { padding: 12px 16px; }
+    .ep-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .ep-params {}
+    .ep-params p { margin-bottom: 6px; font-size: 13px; }
+
+    /* ── MCP TOOL CARD ───────────────────────────────────────────────────────── */
+    .mcp-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .mcp-header {
+      background: var(--purple-bg);
+      border-bottom: 1px solid var(--purple-border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mcp-tool-name {
+      font-family: 'SFMono-Regular', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--purple);
+    }
+    .mcp-body { padding: 12px 16px; }
+    .mcp-body p { font-size: 13px; margin-bottom: 8px; }
+
+    /* ── STEPS ───────────────────────────────────────────────────────────────── */
+    .steps { counter-reset: step; margin: 12px 0 16px; }
+    .step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .step-num {
+      counter-increment: step;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body {}
+    .step-body p { margin-bottom: 6px; }
+
+    /* ── GRID CARDS ──────────────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+    .info-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: var(--bg);
+    }
+    .info-card h4 { margin: 0 0 6px; font-size: 13px; }
+    .info-card p { margin: 0; font-size: 12.5px; }
+    .info-card .icon { font-size: 20px; margin-bottom: 6px; }
+
+    /* ── ARCH DIAGRAM ────────────────────────────────────────────────────────── */
+    .arch-diagram {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-family: 'SFMono-Regular', monospace;
+      font-size: 12px;
+      line-height: 2;
+      color: var(--text-muted);
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .arch-h { color: var(--accent); font-weight: 700; }
+    .arch-kw { color: var(--green); }
+    .arch-val { color: var(--orange); }
+    .arch-arr { color: var(--text-muted); }
+
+    /* ── FILE TREE ───────────────────────────────────────────────────────────── */
+    .file-tree {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'SFMono-Regular', monospace;
+      font-size: 12.5px;
+      line-height: 1.9;
+      color: var(--text-muted);
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .ft-dir { color: var(--accent); font-weight: 600; }
+    .ft-file { color: var(--text); }
+    .ft-comment { color: var(--text-light); }
+
+    /* checklist */
+    .checklist { list-style: none; margin: 0 0 12px; padding: 0; }
+    .checklist li { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px; color: var(--text-muted); }
+    .checklist li::before { content: '☐'; color: var(--text-light); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .checklist li.done::before { content: '✓'; color: var(--green); }
+    .checklist li strong { color: var(--text); }
+
+    /* ── DIVIDER ─────────────────────────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    /* ── SCROLLBAR ───────────────────────────────────────────────────────────── */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main-content { padding: 20px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────────── -->
+<header class="site-header">
+  <span class="logo">Shop<span>Wave</span></span>
+  <span class="header-badge">v1.0.0</span>
+  <span class="header-meta">Technical Reference · Last updated April 2026</span>
+</header>
+
+<!-- ── LAYOUT ──────────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-label">Overview</div>
+      <a href="#intro">Introduction</a>
+      <a href="#tech-stack">Tech Stack</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#filesystem">File System</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Setup</div>
+      <a href="#env-vars">Environment Variables</a>
+      <a href="#install-deps">Install Dependencies</a>
+      <a href="#run-local">Run Locally</a>
+      <a href="#docker">Docker / Compose</a>
+      <a href="#migrations">DB Migrations</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Backend API</div>
+      <a href="#api-overview">API Overview</a>
+      <a href="#api-auth">Auth Endpoints</a>
+      <a href="#api-users">User Endpoints</a>
+      <a href="#api-products">Product Endpoints</a>
+      <a href="#api-categories">Category Endpoints</a>
+      <a href="#api-orders">Order Endpoints</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">MCP Servers</div>
+      <a href="#mcp-overview">MCP Overview</a>
+      <a href="#mcp-inventory">Inventory</a>
+      <a href="#mcp-payments">Payments</a>
+      <a href="#mcp-search">Search</a>
+      <a href="#mcp-notifications">Notifications</a>
+      <a href="#mcp-analytics">Analytics</a>
+      <a href="#mcp-content">Content (AI)</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Database</div>
+      <a href="#db-schema">Schema Overview</a>
+      <a href="#db-users">users table</a>
+      <a href="#db-products">products table</a>
+      <a href="#db-categories">categories table</a>
+      <a href="#db-orders">orders table</a>
+      <a href="#db-order-items">order_items table</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Security</div>
+      <a href="#sec-auth">Authentication Flow</a>
+      <a href="#sec-jwt">JWT & Cookies</a>
+      <a href="#sec-mcp-key">MCP Internal Key</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Frontend</div>
+      <a href="#fe-routes">Routes</a>
+      <a href="#fe-store">State (Zustand)</a>
+      <a href="#fe-hooks">Hooks</a>
+      <a href="#fe-vite">Vite Config</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Implementation</div>
+      <a href="#impl-sequence">Integration Sequence</a>
+      <a href="#impl-mcp-client">MCPClient Code</a>
+      <a href="#impl-dataflow">Data Flow</a>
+      <a href="#impl-testing">Testing</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Production</div>
+      <a href="#prod-checklist">Production Checklist</a>
+      <a href="#prod-observability">Observability</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ─────────────────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INTRODUCTION
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="intro">
+      <div class="page-intro">
+        <h1>ShopWave — Technical Documentation</h1>
+        <p>
+          Complete internal reference for the ShopWave e-commerce platform. Covers system
+          architecture, every REST API endpoint, all six MCP server tool definitions,
+          database schema, Docker orchestration, dependency installation, security design,
+          and implementation guides. This is the single source of truth for the codebase.
+        </p>
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span class="badge badge-ok">Python 3.14+</span>
+          <span class="badge badge-info">FastAPI 0.115+</span>
+          <span class="badge badge-info">React 19</span>
+          <span class="badge badge-neutral">PostgreSQL 18 + pgvector</span>
+          <span class="badge badge-neutral">Docker Compose</span>
+          <span class="badge badge-admin">FastMCP</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         TECH STACK
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="tech-stack">
+      <h2>Tech Stack &amp; Libraries</h2>
+
+      <h3>Backend — Python</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>Library</th><th>Version</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="td-name">fastapi</td><td><span class="badge badge-neutral">≥0.115.0</span></td><td>ASGI web framework; dependency injection, lifespan hooks, auto OpenAPI docs</td></tr>
+            <tr><td class="td-name">uvicorn[standard]</td><td><span class="badge badge-neutral">≥0.32.0</span></td><td>ASGI server with WebSocket and hot-reload support</td></tr>
+            <tr><td class="td-name">sqlalchemy</td><td><span class="badge badge-neutral">≥2.0.36</span></td><td>ORM with async support; 2.x API required for PG18 features</td></tr>
+            <tr><td class="td-name">alembic</td><td><span class="badge badge-neutral">≥1.14.0</span></td><td>Schema migration — version-controlled DB changes</td></tr>
+            <tr><td class="td-name">asyncpg</td><td><span class="badge badge-neutral">≥0.30.0</span></td><td>High-performance async PostgreSQL driver used by SQLAlchemy async engine</td></tr>
+            <tr><td class="td-name">psycopg[binary]</td><td><span class="badge badge-neutral">≥3.2.3</span></td><td>Sync PG driver for Alembic env.py (Alembic requires sync context)</td></tr>
+            <tr><td class="td-name">pwdlib[argon2]</td><td><span class="badge badge-neutral">≥0.2.1</span></td><td>Password hashing using Argon2id algorithm</td></tr>
+            <tr><td class="td-name">pyjwt[crypto]</td><td><span class="badge badge-neutral">≥2.10.0</span></td><td>JWT encoding/decoding; crypto extra adds RSA/EC key support</td></tr>
+            <tr><td class="td-name">python-multipart</td><td><span class="badge badge-neutral">≥0.0.18</span></td><td>Required for OAuth2 form-data login flow</td></tr>
+            <tr><td class="td-name">pydantic</td><td><span class="badge badge-neutral">≥2.10.0</span></td><td>Data validation powering FastAPI request/response schemas</td></tr>
+            <tr><td class="td-name">pydantic-settings</td><td><span class="badge badge-neutral">≥2.6.0</span></td><td>Reads <code>.env</code> files into strongly-typed <code>Settings</code> class</td></tr>
+            <tr><td class="td-name">email-validator</td><td><span class="badge badge-neutral">≥2.2.0</span></td><td>Validates <code>EmailStr</code> fields in Pydantic schemas</td></tr>
+            <tr><td class="td-name">python-slugify</td><td><span class="badge badge-neutral">≥8.0.4</span></td><td>URL-friendly slugs from product/category names</td></tr>
+            <tr><td class="td-name">Pillow</td><td><span class="badge badge-neutral">≥11.0.0</span></td><td>Image processing for product thumbnail generation</td></tr>
+            <tr><td class="td-name">httpx</td><td><span class="badge badge-neutral">≥0.28.0</span></td><td>Async HTTP client used for MCP server communication</td></tr>
+            <tr><td class="td-name">mcp (FastMCP)</td><td><span class="badge badge-neutral">latest</span></td><td>MCP server framework — <code>FastMCP</code> + <code>@mcp.tool()</code> decorator</td></tr>
+            <tr><td class="td-name">razorpay</td><td><span class="badge badge-neutral">latest</span></td><td>Razorpay Python SDK via lazy import in payments MCP server</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Backend Dev Dependencies</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Library</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">pytest ≥8.3.0</td><td>Test runner</td></tr>
+            <tr><td class="td-name">pytest-asyncio ≥0.24.0</td><td>Async test support; <code>asyncio_mode = "auto"</code></td></tr>
+            <tr><td class="td-name">pytest-cov ≥6.0.0</td><td>Code coverage reporting</td></tr>
+            <tr><td class="td-name">ruff ≥0.8.0</td><td>Fast linter + formatter (replaces flake8, black, isort)</td></tr>
+            <tr><td class="td-name">mypy ≥1.13.0</td><td>Static type checker</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Frontend — JavaScript / React</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Package</th><th>Version</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">react</td><td><span class="badge badge-neutral">^19.0.0</span></td><td>UI library</td></tr>
+            <tr><td class="td-name">react-dom</td><td><span class="badge badge-neutral">^19.0.0</span></td><td>React DOM renderer</td></tr>
+            <tr><td class="td-name">react-router-dom</td><td><span class="badge badge-neutral">^7.1.0</span></td><td>Client-side routing (v7 data router)</td></tr>
+            <tr><td class="td-name">@tanstack/react-query</td><td><span class="badge badge-neutral">^5.64.0</span></td><td>Server state management, caching, background refetching</td></tr>
+            <tr><td class="td-name">zustand</td><td><span class="badge badge-neutral">^5.0.3</span></td><td>Lightweight global state (auth, cart)</td></tr>
+            <tr><td class="td-name">axios</td><td><span class="badge badge-neutral">^1.7.9</span></td><td>HTTP client for API calls with interceptors</td></tr>
+            <tr><td class="td-name">vite</td><td><span class="badge badge-neutral">^6.0.6</span></td><td>Build tool &amp; dev server with HMR</td></tr>
+            <tr><td class="td-name">@vitejs/plugin-react</td><td><span class="badge badge-neutral">^4.3.4</span></td><td>JSX transform + React Fast Refresh</td></tr>
+            <tr><td class="td-name">tailwindcss</td><td><span class="badge badge-neutral">^3.4.17</span></td><td>Utility-first CSS framework</td></tr>
+            <tr><td class="td-name">@headlessui/react</td><td><span class="badge badge-neutral">^2.2.0</span></td><td>Accessible UI primitives (modals, dropdowns)</td></tr>
+            <tr><td class="td-name">@heroicons/react</td><td><span class="badge badge-neutral">^2.2.0</span></td><td>SVG icon set</td></tr>
+            <tr><td class="td-name">react-hot-toast</td><td><span class="badge badge-neutral">^2.5.1</span></td><td>Toast notification system</td></tr>
+            <tr><td class="td-name">react-hook-form</td><td><span class="badge badge-neutral">^7.54.2</span></td><td>Performant form state management</td></tr>
+            <tr><td class="td-name">date-fns</td><td><span class="badge badge-neutral">^4.1.0</span></td><td>Date formatting and manipulation</td></tr>
+            <tr><td class="td-name">eslint</td><td><span class="badge badge-neutral">^9.19.0</span></td><td>JavaScript linter</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Infrastructure</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Version</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">PostgreSQL</td><td>18-alpine</td><td>Primary relational database with <code>pgvector</code> extension for embeddings</td></tr>
+            <tr><td class="td-name">Nginx</td><td>1.27-alpine</td><td>Serves React SPA; proxies <code>/api/</code> to backend; gzip + caching</td></tr>
+            <tr><td class="td-name">Docker</td><td>≥26</td><td>Container runtime</td></tr>
+            <tr><td class="td-name">Docker Compose</td><td>v2</td><td>Multi-service orchestration</td></tr>
+            <tr><td class="td-name">Razorpay</td><td>—</td><td>Payment gateway (India)</td></tr>
+            <tr><td class="td-name">SendGrid</td><td>v3</td><td>Transactional email delivery</td></tr>
+            <tr><td class="td-name">Anthropic Claude</td><td>claude-sonnet-4-20250514</td><td>AI product content generation &amp; Voyage-3 embeddings</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ARCHITECTURE
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="architecture">
+      <h2>System Architecture</h2>
+      <p>
+        ShopWave uses a <strong>microservices-inspired design</strong> where the FastAPI backend
+        acts as the orchestrator for six internal <strong>MCP (Model Context Protocol) servers</strong>.
+        Each MCP server owns a single bounded domain and is exposed via JSON-RPC 2.0 over HTTP/SSE.
+        External clients (the React SPA) only ever talk to the FastAPI gateway — they never directly
+        address an MCP server.
+      </p>
+
+      <div class="arch-diagram">
+<span class="arch-h">┌─────────────────────────────────────────────────────────────────────────┐
+│</span>  <span class="arch-kw">BROWSER (React 19 + Vite)</span>                                            <span class="arch-h">│
+└───────────────────────────────────┬─────────────────────────────────────┘</span>
+                                    <span class="arch-arr">│  HTTP/HTTPS + HttpOnly cookies</span>
+                                    <span class="arch-arr">▼</span>
+<span class="arch-h">┌───────────────────────────────────────────────────────────────────────────────────┐
+│</span>  <span class="arch-kw">Nginx 1.27</span>  (port 3000 → 80)                                                    <span class="arch-h">│
+│</span>  serves /dist   ·   proxy: /api/* → backend:8000                                <span class="arch-h">│
+└─────────────────────────────────────────────────────────────────────────────────────┘</span>
+                                    <span class="arch-arr">│  /api/v1/...</span>
+                                    <span class="arch-arr">▼</span>
+<span class="arch-h">┌─────────────────────────────────────────────────────────────────────────────────────┐
+│</span>  <span class="arch-kw">FastAPI 0.115</span>  (port 8000) — <span class="arch-val">THE ORCHESTRATOR</span>                                     <span class="arch-h">│
+│</span>  Middleware: CORS, TrustedHostMiddleware                                            <span class="arch-h">│
+│</span>  Lifespan: httpx.AsyncClient pool    /health     Alembic migrations on boot        <span class="arch-h">│
+│</span>  Routers:  /auth  /users  /products  /categories  /orders                          <span class="arch-h">│
+└────────────────────────┬──────────────────────────────────────────────────────────────┘</span>
+                         <span class="arch-arr">│  httpx POST JSON-RPC 2.0  +  X-MCP-API-Key header</span>
+        <span class="arch-arr">┌────────────────┼──────────────────────┐</span>
+        <span class="arch-arr">▼                ▼                      ▼</span>
+<span class="arch-h">┌──────────────┐ ┌──────────────┐ ┌──────────────────┐</span>
+<span class="arch-h">│</span> <span class="arch-kw">mcp-inventory</span> <span class="arch-h">│</span> <span class="arch-kw">mcp-payments</span>  <span class="arch-h">│</span> <span class="arch-kw">mcp-search</span>         <span class="arch-h">│</span>
+<span class="arch-h">│</span>   <span class="arch-val">:8001</span>        <span class="arch-h">│</span>   <span class="arch-val">:8002</span>        <span class="arch-h">│</span>   <span class="arch-val">:8003</span>              <span class="arch-h">│</span>
+<span class="arch-h">│</span> check_stock   <span class="arch-h">│</span> create_intent <span class="arch-h">│</span> semantic_search    <span class="arch-h">│</span>
+<span class="arch-h">│</span> suggest_order <span class="arch-h">│</span> verify_paymt  <span class="arch-h">│</span> index_product      <span class="arch-h">│</span>
+<span class="arch-h">│</span> bulk_update   <span class="arch-h">│</span> process_rfnd  <span class="arch-h">│</span> reindex_catalogue  <span class="arch-h">│</span>
+<span class="arch-h">└──────────────┘ └──────────────┘ └──────────────────┘</span>
+        <span class="arch-arr">▼                ▼                      ▼</span>
+<span class="arch-h">┌──────────────┐ ┌──────────────┐ ┌──────────────────┐</span>
+<span class="arch-h">│</span> <span class="arch-kw">mcp-notifs</span>    <span class="arch-h">│</span> <span class="arch-kw">mcp-analytics</span> <span class="arch-h">│</span> <span class="arch-kw">mcp-content</span>        <span class="arch-h">│</span>
+<span class="arch-h">│</span>   <span class="arch-val">:8004</span>        <span class="arch-h">│</span>   <span class="arch-val">:8005</span>        <span class="arch-h">│</span>   <span class="arch-val">:8006</span>              <span class="arch-h">│</span>
+<span class="arch-h">│</span> order_confirm <span class="arch-h">│</span> sales_summary <span class="arch-h">│</span> gen_description   <span class="arch-h">│</span>
+<span class="arch-h">│</span> ship_update   <span class="arch-h">│</span> top_products  <span class="arch-h">│</span> gen_meta_tags      <span class="arch-h">│</span>
+<span class="arch-h">│ (SendGrid)    │ revenue_chart │ (Claude AI)        │</span>
+<span class="arch-h">└──────────────┘ └──────────────┘ └──────────────────┘</span>
+                         <span class="arch-arr">│  asyncpg direct connection</span>
+                         <span class="arch-arr">▼</span>
+<span class="arch-h">┌─────────────────────────────────────────────────────────────┐
+│</span>  <span class="arch-kw">PostgreSQL 18</span>  (port 5432)   <span class="arch-val">shopwave_db</span>                    <span class="arch-h">│
+│</span>  Tables: users  products  categories  orders  order_items    <span class="arch-h">│
+│</span>  Extension: pgvector  (1024-dim embeddings on products)      <span class="arch-h">│
+└─────────────────────────────────────────────────────────────┘</span>
+      </div>
+
+      <h3>Communication Protocol — JSON-RPC 2.0</h3>
+      <p>The FastAPI backend communicates with MCP servers using the standard JSON-RPC 2.0 protocol over HTTP POST. All calls include the internal API key in a custom header.</p>
+      <div class="pre-label">Request from FastAPI → MCP Server</div>
+      <pre><code>{
+  <span class="tok-key">"jsonrpc"</span>: <span class="tok-string">"2.0"</span>,
+  <span class="tok-key">"id"</span>: <span class="tok-string">"req-uuid-here"</span>,
+  <span class="tok-key">"method"</span>: <span class="tok-string">"tools/call"</span>,
+  <span class="tok-key">"params"</span>: {
+    <span class="tok-key">"name"</span>: <span class="tok-string">"check_stock_levels"</span>,
+    <span class="tok-key">"arguments"</span>: {
+      <span class="tok-key">"product_ids"</span>: [<span class="tok-string">"uuid-1"</span>, <span class="tok-string">"uuid-2"</span>]
+    }
+  }
+}</code></pre>
+      <div class="pre-label">Response from MCP Server → FastAPI</div>
+      <pre><code>{
+  <span class="tok-key">"jsonrpc"</span>: <span class="tok-string">"2.0"</span>,
+  <span class="tok-key">"id"</span>: <span class="tok-string">"req-uuid-here"</span>,
+  <span class="tok-key">"result"</span>: {
+    <span class="tok-key">"content"</span>: [{
+      <span class="tok-key">"type"</span>: <span class="tok-string">"text"</span>,
+      <span class="tok-key">"text"</span>: <span class="tok-string">"{\"stock_levels\": [...], \"checked_count\": 2}"</span>
+    }]
+  }
+}</code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         FILE SYSTEM
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="filesystem">
+      <h2>File System Structure</h2>
+      <div class="file-tree">
+<span class="ft-dir">ecommerce/</span>                         <span class="ft-comment">← project root</span>
+├── <span class="ft-dir">backend/</span>
+│   ├── <span class="ft-dir">app/</span>
+│   │   ├── <span class="ft-dir">api/</span>
+│   │   │   └── <span class="ft-dir">v1/</span>
+│   │   │       ├── <span class="ft-dir">endpoints/</span>
+│   │   │       │   ├── <span class="ft-file">auth.py</span>         <span class="ft-comment">← /api/v1/auth/*</span>
+│   │   │       │   ├── <span class="ft-file">users.py</span>        <span class="ft-comment">← /api/v1/users/*</span>
+│   │   │       │   ├── <span class="ft-file">products.py</span>     <span class="ft-comment">← /api/v1/products/*</span>
+│   │   │       │   ├── <span class="ft-file">categories.py</span>   <span class="ft-comment">← /api/v1/categories/*</span>
+│   │   │       │   └── <span class="ft-file">orders.py</span>       <span class="ft-comment">← /api/v1/orders/*</span>
+│   │   │       └── <span class="ft-file">router.py</span>
+│   │   ├── <span class="ft-dir">core/</span>
+│   │   │   ├── <span class="ft-file">config.py</span>           <span class="ft-comment">← pydantic-settings .env reader</span>
+│   │   │   ├── <span class="ft-file">security.py</span>         <span class="ft-comment">← Argon2id, JWT creation/verify</span>
+│   │   │   └── <span class="ft-file">dependencies.py</span>     <span class="ft-comment">← FastAPI Depends guards</span>
+│   │   ├── <span class="ft-dir">db/</span>
+│   │   │   ├── <span class="ft-file">session.py</span>           <span class="ft-comment">← async engine + get_db()</span>
+│   │   │   └── <span class="ft-file">base.py</span>             <span class="ft-comment">← SQLAlchemy Base</span>
+│   │   ├── <span class="ft-dir">models/</span>
+│   │   │   ├── <span class="ft-file">user.py</span>
+│   │   │   ├── <span class="ft-file">product.py</span>          <span class="ft-comment">← includes pgvector embedding column</span>
+│   │   │   ├── <span class="ft-file">category.py</span>
+│   │   │   └── <span class="ft-file">order.py</span>            <span class="ft-comment">← Order + OrderItem models</span>
+│   │   ├── <span class="ft-dir">schemas/</span>             <span class="ft-comment">← Pydantic request/response models</span>
+│   │   ├── <span class="ft-dir">services/</span>
+│   │   │   ├── <span class="ft-file">auth_service.py</span>
+│   │   │   └── <span class="ft-file">product_service.py</span>
+│   │   └── <span class="ft-file">main.py</span>             <span class="ft-comment">← FastAPI app, lifespan, middleware</span>
+│   ├── <span class="ft-file">pyproject.toml</span>          <span class="ft-comment">← ALL backend dependencies (pip install .)</span>
+│   ├── <span class="ft-file">Dockerfile</span>              <span class="ft-comment">← multi-stage: builder + runtime</span>
+│   └── <span class="ft-dir">alembic/</span>               <span class="ft-comment">← migration scripts</span>
+├── <span class="ft-dir">frontend/</span>
+│   ├── <span class="ft-dir">src/</span>
+│   │   ├── <span class="ft-file">App.jsx</span>              <span class="ft-comment">← route tree</span>
+│   │   ├── <span class="ft-file">main.jsx</span>             <span class="ft-comment">← ReactDOM root, QueryClient, BrowserRouter</span>
+│   │   ├── <span class="ft-dir">components/</span>         <span class="ft-comment">← shared UI components</span>
+│   │   ├── <span class="ft-dir">pages/</span>              <span class="ft-comment">← Home, Products, ProductDetail, Cart, Checkout, Auth, Orders, Profile</span>
+│   │   ├── <span class="ft-dir">hooks/</span>              <span class="ft-comment">← useSemanticSearch, etc.</span>
+│   │   ├── <span class="ft-dir">services/</span>           <span class="ft-comment">← axios API service layer</span>
+│   │   ├── <span class="ft-dir">store/</span>              <span class="ft-comment">← zustand: authStore, cartStore</span>
+│   │   └── <span class="ft-dir">utils/</span>
+│   ├── <span class="ft-file">package.json</span>
+│   ├── <span class="ft-file">vite.config.js</span>
+│   └── <span class="ft-file">Dockerfile</span>           <span class="ft-comment">← node build → nginx serve</span>
+├── <span class="ft-dir">mcp-servers/</span>
+│   ├── <span class="ft-dir">inventory/</span>           <span class="ft-comment">← :8001  (check_stock, suggest_reorder, bulk_update)</span>
+│   ├── <span class="ft-dir">payments/</span>            <span class="ft-comment">← :8002  (create_payment_intent, verify_payment, process_refund)</span>
+│   ├── <span class="ft-dir">search/</span>              <span class="ft-comment">← :8003  (semantic_search, index_product, reindex_catalogue)</span>
+│   ├── <span class="ft-dir">notifications/</span>       <span class="ft-comment">← :8004  (send_order_confirmation, send_shipping_update)</span>
+│   ├── <span class="ft-dir">analytics/</span>           <span class="ft-comment">← :8005  (get_sales_summary, get_top_products, revenue_by_day, low_stock_report)</span>
+│   └── <span class="ft-dir">content/</span>             <span class="ft-comment">← :8006  (generate_product_description, generate_meta_tags)</span>
+├── <span class="ft-dir">nginx/</span>
+│   └── <span class="ft-file">nginx.conf</span>
+├── <span class="ft-dir">docs/</span>
+│   └── <span class="ft-file">implementation_sequence_guide.md</span>
+├── <span class="ft-file">docker-compose.yml</span>
+├── <span class="ft-file">.env</span>                    <span class="ft-comment">← secret values (git-ignored)</span>
+├── <span class="ft-file">.gitignore</span>
+└── <span class="ft-file">shopwave_docs.html</span>      <span class="ft-comment">← this file</span>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ENVIRONMENT VARIABLES
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="env-vars">
+      <h2>Environment Variables</h2>
+      <p>Create a <code>.env</code> file in the project root. The Docker Compose file reads it automatically. <strong>Never commit this file to git.</strong></p>
+
+      <div class="pre-label">Template — .env</div>
+      <pre><code><span class="tok-comment"># ── Core ──────────────────────────────────────────────────────</span>
+<span class="tok-key">SECRET_KEY</span>=<span class="tok-string">change_me_generate_with_openssl_rand_hex_32</span>
+<span class="tok-key">DEBUG</span>=<span class="tok-string">false</span>
+
+<span class="tok-comment"># ── Database ───────────────────────────────────────────────────</span>
+<span class="tok-key">DATABASE_URL</span>=<span class="tok-string">postgresql+asyncpg://shopwave:shopwave_pass@db:5432/shopwave_db</span>
+<span class="tok-comment"># For local (non-Docker) use localhost instead of 'db':
+# DATABASE_URL=postgresql+asyncpg://shopwave:shopwave_pass@localhost:5432/shopwave_db</span>
+
+<span class="tok-comment"># ── MCP Internal Security ──────────────────────────────────────</span>
+<span class="tok-key">MCP_INTERNAL_API_KEY</span>=<span class="tok-string">generate_with_python_secrets_token_hex_32</span>
+
+<span class="tok-comment"># ── Payment Gateway (Razorpay) ─────────────────────────────────</span>
+<span class="tok-key">RAZORPAY_KEY_ID</span>=<span class="tok-string">rzp_test_...</span>
+<span class="tok-key">RAZORPAY_KEY_SECRET</span>=<span class="tok-string">your_razorpay_secret</span>
+
+<span class="tok-comment"># ── Email (SendGrid) ───────────────────────────────────────────</span>
+<span class="tok-key">SENDGRID_API_KEY</span>=<span class="tok-string">SG.your_sendgrid_key</span>
+<span class="tok-key">FROM_EMAIL</span>=<span class="tok-string">noreply@shopwave.com</span>
+
+<span class="tok-comment"># ── AI (Anthropic — content & embeddings) ─────────────────────</span>
+<span class="tok-key">ANTHROPIC_API_KEY</span>=<span class="tok-string">sk-ant-...</span>
+
+<span class="tok-comment"># ── CORS ───────────────────────────────────────────────────────</span>
+<span class="tok-key">BACKEND_CORS_ORIGINS</span>=<span class="tok-string">["http://localhost:3000","http://localhost:80"]</span>
+
+<span class="tok-comment"># ── MCP Server URLs (default: Docker internal DNS) ─────────────</span>
+<span class="tok-key">MCP_INVENTORY_URL</span>=<span class="tok-string">http://mcp-inventory:8001</span>
+<span class="tok-key">MCP_PAYMENTS_URL</span>=<span class="tok-string">http://mcp-payments:8002</span>
+<span class="tok-key">MCP_SEARCH_URL</span>=<span class="tok-string">http://mcp-search:8003</span>
+<span class="tok-key">MCP_NOTIFICATIONS_URL</span>=<span class="tok-string">http://mcp-notifications:8004</span>
+<span class="tok-key">MCP_ANALYTICS_URL</span>=<span class="tok-string">http://mcp-analytics:8005</span>
+<span class="tok-key">MCP_CONTENT_URL</span>=<span class="tok-string">http://mcp-content:8006</span></code></pre>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">SECRET_KEY</td><td><span class="badge badge-danger">Required</span></td><td>JWT signing secret — generate with <code>openssl rand -hex 32</code></td></tr>
+            <tr><td class="td-name">DATABASE_URL</td><td><span class="badge badge-danger">Required</span></td><td>Full asyncpg connection string including credentials and DB name</td></tr>
+            <tr><td class="td-name">MCP_INTERNAL_API_KEY</td><td><span class="badge badge-danger">Required</span></td><td>Shared secret for backend → MCP server auth; 32-byte hex minimum</td></tr>
+            <tr><td class="td-name">RAZORPAY_KEY_ID</td><td><span class="badge badge-warn">If payments used</span></td><td>Razorpay public key ID</td></tr>
+            <tr><td class="td-name">RAZORPAY_KEY_SECRET</td><td><span class="badge badge-warn">If payments used</span></td><td>Razorpay secret key — never expose to frontend</td></tr>
+            <tr><td class="td-name">SENDGRID_API_KEY</td><td><span class="badge badge-warn">If email used</span></td><td>SendGrid API key for transactional email</td></tr>
+            <tr><td class="td-name">ANTHROPIC_API_KEY</td><td><span class="badge badge-warn">If AI used</span></td><td>Used by mcp-search (Voyage-3 embeddings) and mcp-content (Claude)</td></tr>
+            <tr><td class="td-name">DEBUG</td><td><span class="badge badge-neutral">Optional</span></td><td>Set <code>false</code> in production. Enables FastAPI debug mode if <code>true</code></td></tr>
+            <tr><td class="td-name">BACKEND_CORS_ORIGINS</td><td><span class="badge badge-neutral">Optional</span></td><td>JSON array of allowed origins for CORS</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INSTALL DEPENDENCIES
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="install-deps">
+      <h2>Installing Dependencies</h2>
+      <div class="callout callout-info">
+        <span class="callout-label">ℹ️ Package Manager</span>
+        <p>The backend uses <code>pyproject.toml</code> (Hatchling build backend) — <strong>not</strong> <code>requirements.txt</code>. The frontend uses <code>package.json</code> with npm.</p>
+      </div>
+
+      <h3>Backend (Python 3.14)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Create a virtual environment</strong>
+            <pre><code><span class="tok-comment"># From the project root:</span>
+python3.14 -m venv .venv
+<span class="tok-comment"># Windows:</span>
+.venv\Scripts\activate
+<span class="tok-comment"># macOS/Linux:</span>
+source .venv/bin/activate</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Install all production dependencies from pyproject.toml</strong>
+            <pre><code><span class="tok-comment"># The dot installs the current package (reads pyproject.toml)</span>
+pip install ./backend
+
+<span class="tok-comment"># OR: navigate into backend first</span>
+cd backend
+pip install .</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Include dev dependencies (linting, testing)</strong>
+            <pre><code>pip install "./backend[dev]"
+<span class="tok-comment"># OR from within backend/:</span>
+pip install ".[dev]"</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Install each MCP server's dependencies</strong> (each has its own <code>pyproject.toml</code>)
+            <pre><code>pip install ./mcp-servers/inventory
+pip install ./mcp-servers/payments
+pip install ./mcp-servers/search
+pip install ./mcp-servers/notifications
+pip install ./mcp-servers/analytics
+pip install ./mcp-servers/content</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <h3>Frontend (Node.js ≥20)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <pre><code>cd frontend
+npm install</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Start dev server</strong> (requires backend running on :8000)
+            <pre><code>npm run dev
+<span class="tok-comment"># Opens at http://localhost:5173</span>
+<span class="tok-comment"># Proxies /api → http://localhost:8000 (see vite.config.js)</span></code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Production build</strong>
+            <pre><code>npm run build      <span class="tok-comment"># outputs to frontend/dist/</span>
+npm run preview    <span class="tok-comment"># preview the built bundle locally</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         RUN LOCALLY (NO DOCKER)
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="run-local">
+      <h2>Running Locally (Without Docker)</h2>
+      <div class="callout callout-warn">
+        <span class="callout-label">⚠️ Prerequisite</span>
+        <p>You need PostgreSQL 18 running locally with the <code>pgvector</code> extension. Create database: <code>CREATE DATABASE shopwave_db;</code> and user <code>shopwave</code>.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Set DATABASE_URL to localhost in your .env</strong>
+            <pre><code>DATABASE_URL=postgresql+asyncpg://shopwave:shopwave_pass@localhost:5432/shopwave_db</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Apply migrations</strong>
+            <pre><code>cd backend
+alembic upgrade head</code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Start the FastAPI backend</strong>
+            <pre><code>uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+<span class="tok-comment"># API Docs: http://localhost:8000/docs</span>
+<span class="tok-comment"># OpenAPI JSON: http://localhost:8000/openapi.json</span></code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Start individual MCP servers</strong> (in separate terminals)
+            <pre><code><span class="tok-comment"># Terminal 2</span>
+DATABASE_URL=postgresql+asyncpg://shopwave:shopwave_pass@localhost:5432/shopwave_db PORT=8001 \
+  python mcp-servers/inventory/server.py
+
+<span class="tok-comment"># Terminal 3</span>
+RAZORPAY_KEY_ID=... RAZORPAY_KEY_SECRET=... PORT=8002 \
+  python mcp-servers/payments/server.py
+
+<span class="tok-comment"># (repeat for :8003, :8004, :8005, :8006)</span></code></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body"><strong>Start the React frontend</strong>
+            <pre><code>cd frontend && npm run dev</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         DOCKER
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="docker">
+      <h2>Docker &amp; Docker Compose</h2>
+
+      <h3>Core Services in docker-compose.yml</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Service</th><th>Image / Build</th><th>Host Port</th><th>Internal Port</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">db</td><td>postgres:18-alpine</td><td>5432</td><td>5432</td><td>Volume: <code>postgres_data</code>; healthcheck: pg_isready</td></tr>
+            <tr><td class="td-name">backend</td><td>./backend Dockerfile</td><td>8000</td><td>8000</td><td>Waits for db healthy; runs <code>alembic upgrade head</code> on start</td></tr>
+            <tr><td class="td-name">frontend</td><td>./frontend Dockerfile</td><td>3000</td><td>80</td><td>Waits for backend healthy; Nginx proxies /api → backend:8000</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Essential Commands</h3>
+      <pre><code><span class="tok-comment"># ── Build and start ALL services (first time or after code changes)</span>
+docker compose up --build
+
+<span class="tok-comment"># ── Start services in background (detached)</span>
+docker compose up -d --build
+
+<span class="tok-comment"># ── View logs of all services</span>
+docker compose logs -f
+
+<span class="tok-comment"># ── View logs of a specific service</span>
+docker compose logs -f backend
+
+<span class="tok-comment"># ── Stop all services (keeps volumes)</span>
+docker compose down
+
+<span class="tok-comment"># ── Stop and REMOVE volumes (WARNING: deletes all DB data)</span>
+docker compose down -v
+
+<span class="tok-comment"># ── Rebuild a single service without stopping others</span>
+docker compose up -d --build backend
+
+<span class="tok-comment"># ── Execute commands inside a running container</span>
+docker exec -it shopwave_backend bash
+docker exec -it shopwave_db psql -U shopwave -d shopwave_db</code></pre>
+
+      <h3>Backend Dockerfile — Multi-Stage Build</h3>
+      <p>The backend Dockerfile uses two stages to minimize image size and attack surface:</p>
+      <div class="grid-2">
+        <div class="info-card">
+          <h4>Stage 1: builder (python:3.14-slim)</h4>
+          <p>Installs <code>gcc</code> + <code>libpq-dev</code> needed to compile asyncpg. Builds a virtualenv at <code>/opt/venv</code>. This stage is discarded after build.</p>
+        </div>
+        <div class="info-card">
+          <h4>Stage 2: runtime (python:3.14-slim)</h4>
+          <p>Copies only <code>/opt/venv</code> from builder. Runs as non-root user <code>appuser:appgroup</code> (UID/GID 1001). Exposes port 8000.</p>
+        </div>
+      </div>
+
+      <h3>Frontend Dockerfile — Multi-Stage Build</h3>
+      <div class="grid-2">
+        <div class="info-card">
+          <h4>Stage 1: builder (node:22-alpine)</h4>
+          <p>Copies <code>package.json</code> + lockfile, runs <code>npm ci</code>, then <code>npm run build</code>. Outputs to <code>/app/dist</code>.</p>
+        </div>
+        <div class="info-card">
+          <h4>Stage 2: runtime (nginx:1.27-alpine)</h4>
+          <p>Copies <code>/app/dist</code> to Nginx html root. Injects custom <code>nginx.conf</code> for SPA routing and API proxying.</p>
+        </div>
+      </div>
+
+      <h3>Adding MCP Servers to docker-compose.yml</h3>
+      <p>By default, MCP servers run as separate processes. To add them to Docker Compose:</p>
+      <pre><code><span class="tok-comment"># Add to docker-compose.yml services block:</span>
+<span class="tok-key">mcp-inventory</span>:
+  build: ./mcp-servers/inventory
+  container_name: shopwave_mcp_inventory
+  restart: unless-stopped
+  environment:
+    DATABASE_URL: postgresql://<span class="tok-string">shopwave</span>:<span class="tok-string">shopwave_pass</span>@db:<span class="tok-num">5432</span>/shopwave_db
+    PORT: <span class="tok-num">8001</span>
+  depends_on:
+    db:
+      condition: service_healthy
+  networks:
+    - shopwave_net
+  <span class="tok-comment"># No ports: exposed — internal Docker network only (not host-accessible)</span>
+
+<span class="tok-key">mcp-payments</span>:
+  build: ./mcp-servers/payments
+  container_name: shopwave_mcp_payments
+  restart: unless-stopped
+  environment:
+    RAZORPAY_KEY_ID: <span class="tok-string">${RAZORPAY_KEY_ID}</span>
+    RAZORPAY_KEY_SECRET: <span class="tok-string">${RAZORPAY_KEY_SECRET}</span>
+    PORT: <span class="tok-num">8002</span>
+  networks:
+    - shopwave_net
+
+<span class="tok-comment"># ... repeat pattern for mcp-search (:8003), mcp-notifications (:8004),
+# mcp-analytics (:8005), mcp-content (:8006)</span></code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MIGRATIONS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="migrations">
+      <h2>Database Migrations (Alembic)</h2>
+      <div class="pre-label">Commands</div>
+      <pre><code><span class="tok-comment"># Apply all pending migrations (used automatically by Docker on start)</span>
+alembic upgrade head
+
+<span class="tok-comment"># Generate a new migration from model changes</span>
+alembic revision --autogenerate -m "add product tags"
+
+<span class="tok-comment"># Downgrade one step</span>
+alembic downgrade -1
+
+<span class="tok-comment"># View current revision</span>
+alembic current
+
+<span class="tok-comment"># View migration history</span>
+alembic history --verbose
+
+<span class="tok-comment"># Run inside Docker container:</span>
+docker exec shopwave_backend alembic upgrade head</code></pre>
+      <div class="callout callout-warn">
+        <span class="callout-label">⚠️ pgvector Extension</span>
+        <p>Before running migrations, ensure the <code>pgvector</code> extension is installed on PostgreSQL: <code>CREATE EXTENSION IF NOT EXISTS vector;</code>. This should be in the first Alembic migration.</p>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         API OVERVIEW
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-overview">
+      <h2>API Overview</h2>
+      <p>All REST endpoints are prefixed <code>/api/v1</code>. The FastAPI app is available at <code>http://localhost:8000</code> (local) or via Nginx proxy at <code>http://localhost:3000/api</code> (Docker).</p>
+      <div class="grid-2">
+        <div class="info-card">
+          <div class="icon">📖</div>
+          <h4>Interactive API Docs</h4>
+          <p><code>http://localhost:8000/docs</code> — Swagger UI (auto-generated). Try endpoints directly from the browser.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">🔗</div>
+          <h4>OpenAPI JSON</h4>
+          <p><code>http://localhost:8000/openapi.json</code> — Machine-readable spec. Import into Postman or generate client SDKs.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">❤️</div>
+          <h4>Health Check</h4>
+          <p><code>GET /health</code> — Returns <code>{"status": "ok"}</code>. Used by Docker healthchecks.</p>
+        </div>
+        <div class="info-card">
+          <div class="icon">🔒</div>
+          <h4>Authentication</h4>
+          <p>JWT Bearer token in <code>Authorization</code> header. Access tokens expire in 15 min; refresh via <code>POST /auth/refresh</code> using <code>HttpOnly</code> cookie.</p>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Prefix</th><th>Router File</th><th>Endpoints</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">/api/v1/auth</td><td>auth.py</td><td>register, login, refresh, logout, me</td></tr>
+            <tr><td class="td-name">/api/v1/users</td><td>users.py</td><td>me (get/update), list (admin), get by ID (admin)</td></tr>
+            <tr><td class="td-name">/api/v1/products</td><td>products.py</td><td>list, get, create (admin)</td></tr>
+            <tr><td class="td-name">/api/v1/categories</td><td>categories.py</td><td>list, get, create (admin), delete (admin)</td></tr>
+            <tr><td class="td-name">/api/v1/orders</td><td>orders.py</td><td>create, list mine, get, update status (admin)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         AUTH ENDPOINTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-auth">
+      <h2>Auth Endpoints <code>/api/v1/auth</code></h2>
+
+      <!-- Register -->
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/auth/register</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body">
+          <p>Create a new user account. Password is hashed with Argon2id before storage.</p>
+          <div class="pre-label">Request Body (JSON)</div>
+          <pre><code>{
+  <span class="tok-key">"username"</span>: <span class="tok-string">"johndoe"</span>,         <span class="tok-comment">// unique, string</span>
+  <span class="tok-key">"email"</span>: <span class="tok-string">"john@example.com"</span>,  <span class="tok-comment">// unique, validated email</span>
+  <span class="tok-key">"password"</span>: <span class="tok-string">"SecureP@ss1"</span>,    <span class="tok-comment">// min 8 chars</span>
+  <span class="tok-key">"full_name"</span>: <span class="tok-string">"John Doe"</span>        <span class="tok-comment">// optional</span>
+}</code></pre>
+          <div class="pre-label">Response 201</div>
+          <pre><code>{
+  <span class="tok-key">"id"</span>: <span class="tok-string">"uuid-v4"</span>,
+  <span class="tok-key">"username"</span>: <span class="tok-string">"johndoe"</span>,
+  <span class="tok-key">"email"</span>: <span class="tok-string">"john@example.com"</span>,
+  <span class="tok-key">"full_name"</span>: <span class="tok-string">"John Doe"</span>,
+  <span class="tok-key">"role"</span>: <span class="tok-string">"customer"</span>,
+  <span class="tok-key">"is_active"</span>: <span class="tok-fn">true</span>,
+  <span class="tok-key">"created_at"</span>: <span class="tok-string">"2026-04-10T12:00:00Z"</span>
+}</code></pre>
+          <div class="ep-meta"><span class="badge badge-danger">409</span> username or email already exists</div>
+        </div>
+      </div>
+
+      <!-- Login -->
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/auth/login</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body">
+          <p>Authenticate with email + password. Returns a short-lived access token and sets a <code>HttpOnly</code> refresh token cookie.</p>
+          <div class="pre-label">Request Body (application/x-www-form-urlencoded or JSON)</div>
+          <pre><code>{
+  <span class="tok-key">"email"</span>: <span class="tok-string">"john@example.com"</span>,
+  <span class="tok-key">"password"</span>: <span class="tok-string">"SecureP@ss1"</span>
+}</code></pre>
+          <div class="pre-label">Response 200</div>
+          <pre><code>{
+  <span class="tok-key">"access_token"</span>: <span class="tok-string">"eyJhbGci..."</span>,   <span class="tok-comment">// JWT, 15 min expiry</span>
+  <span class="tok-key">"token_type"</span>: <span class="tok-string">"bearer"</span>
+}
+<span class="tok-comment">// Cookie: refresh_token=... (HttpOnly, Secure, SameSite=lax, 7-day expiry)</span></code></pre>
+          <div class="ep-meta"><span class="badge badge-danger">401</span> Invalid credentials &nbsp; <span class="badge badge-danger">403</span> Account inactive</div>
+        </div>
+      </div>
+
+      <!-- Refresh -->
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/auth/refresh</span>
+          <span class="ep-desc badge badge-pub">Cookie required</span>
+        </div>
+        <div class="ep-body">
+          <p>Issue a new access token using the <code>refresh_token</code> HttpOnly cookie. No request body needed — the cookie is sent automatically by the browser.</p>
+          <div class="pre-label">Response 200</div>
+          <pre><code>{
+  <span class="tok-key">"access_token"</span>: <span class="tok-string">"eyJhbGci..."</span>,
+  <span class="tok-key">"token_type"</span>: <span class="tok-string">"bearer"</span>
+}</code></pre>
+          <div class="ep-meta"><span class="badge badge-danger">401</span> Missing or expired refresh cookie</div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/auth/logout</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body">
+          <p>Clear the refresh token cookie by setting it to expired. The access token must still be revoked client-side (clear from memory/store).</p>
+          <div class="pre-label">Response 200</div>
+          <pre><code>{ <span class="tok-key">"message"</span>: <span class="tok-string">"Logged out"</span> }</code></pre>
+        </div>
+      </div>
+
+      <!-- Me -->
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/auth/me</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body">
+          <p>Returns the full profile of the currently authenticated user.</p>
+          <div class="pre-label">Response 200</div>
+          <pre><code>{ <span class="tok-comment">/* same shape as register response */</span> }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         USER ENDPOINTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-users">
+      <h2>User Endpoints <code>/api/v1/users</code></h2>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/users/me</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body"><p>Returns the authenticated user's profile.</p></div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-patch">PATCH</span>
+          <span class="ep-path">/api/v1/users/me</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body">
+          <p>Update authenticated user's own profile. Only <code>full_name</code> and <code>username</code> are mutable by the user.</p>
+          <div class="pre-label">Request Body</div>
+          <pre><code>{ <span class="tok-key">"full_name"</span>: <span class="tok-string">"Jane Doe"</span> }</code></pre>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/users/</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body">
+          <p>Paginated list of all users.</p>
+          <div class="ep-meta"><strong>Query:</strong> <code>skip</code> (default 0), <code>limit</code> (default 20)</div>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/users/{user_id}</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body"><p>Fetch a specific user by UUID.</p></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PRODUCT ENDPOINTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-products">
+      <h2>Product Endpoints <code>/api/v1/products</code></h2>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/products/</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body">
+          <p>Paginated list of active products. Supports optional filtering by category and text search (case-insensitive ILIKE on <code>name</code>).</p>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Query Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">skip</td><td>integer</td><td>0</td><td>Pagination offset (≥0)</td></tr>
+                <tr><td class="td-name">limit</td><td>integer</td><td>20</td><td>Page size (1–100)</td></tr>
+                <tr><td class="td-name">category_id</td><td>UUID</td><td>—</td><td>Filter by category UUID</td></tr>
+                <tr><td class="td-name">search</td><td>string</td><td>—</td><td>Case-insensitive text search on product name</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pre-label">Example</div>
+          <pre><code>GET /api/v1/products/?skip=0&limit=20&category_id=uuid&search=shoes</code></pre>
+          <div class="pre-label">Response 200</div>
+          <pre><code>[
+  {
+    <span class="tok-key">"id"</span>: <span class="tok-string">"uuid"</span>,
+    <span class="tok-key">"name"</span>: <span class="tok-string">"Running Shoes Pro"</span>,
+    <span class="tok-key">"slug"</span>: <span class="tok-string">"running-shoes-pro"</span>,
+    <span class="tok-key">"description"</span>: <span class="tok-string">"..."</span>,
+    <span class="tok-key">"price"</span>: <span class="tok-string">"2999.00"</span>,
+    <span class="tok-key">"sku"</span>: <span class="tok-string">"RUN-001"</span>,
+    <span class="tok-key">"stock_quantity"</span>: <span class="tok-num">42</span>,
+    <span class="tok-key">"image_url"</span>: <span class="tok-string">"/media/products/shoes.jpg"</span>,
+    <span class="tok-key">"category_id"</span>: <span class="tok-string">"uuid"</span>,
+    <span class="tok-key">"is_active"</span>: <span class="tok-fn">true</span>,
+    <span class="tok-key">"created_at"</span>: <span class="tok-string">"2026-04-10T12:00:00Z"</span>
+  }
+]</code></pre>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/products/{product_id}</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body">
+          <p>Fetch a single product by UUID.</p>
+          <div class="ep-meta"><span class="badge badge-danger">404</span> Product not found</div>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/products/</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body">
+          <p>Create a new product. After creation, call <code>mcp-search: index_product</code> to generate the embedding for semantic search.</p>
+          <div class="pre-label">Request Body</div>
+          <pre><code>{
+  <span class="tok-key">"name"</span>: <span class="tok-string">"Running Shoes Pro"</span>,
+  <span class="tok-key">"description"</span>: <span class="tok-string">"Premium waterproof running shoes..."</span>,
+  <span class="tok-key">"price"</span>: <span class="tok-string">"2999.00"</span>,
+  <span class="tok-key">"sku"</span>: <span class="tok-string">"RUN-001"</span>,
+  <span class="tok-key">"stock_quantity"</span>: <span class="tok-num">100</span>,
+  <span class="tok-key">"category_id"</span>: <span class="tok-string">"uuid"</span>,
+  <span class="tok-key">"image_url"</span>: <span class="tok-string">"/media/products/shoes.jpg"</span>
+}</code></pre>
+          <div class="ep-meta"><span class="badge badge-ok">201 Created</span> Returns the created product object</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         CATEGORY ENDPOINTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-categories">
+      <h2>Category Endpoints <code>/api/v1/categories</code></h2>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/categories/</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body"><p>Returns all top-level categories (where <code>parent_id IS NULL</code>). Supports hierarchical categories.</p></div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/categories/{category_id}</span>
+          <span class="ep-desc badge badge-pub">Public</span>
+        </div>
+        <div class="ep-body"><p>Get a specific category by UUID.</p></div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/categories/</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body">
+          <p>Create a new category or sub-category.</p>
+          <div class="pre-label">Request Body</div>
+          <pre><code>{
+  <span class="tok-key">"name"</span>: <span class="tok-string">"Electronics"</span>,
+  <span class="tok-key">"slug"</span>: <span class="tok-string">"electronics"</span>,
+  <span class="tok-key">"parent_id"</span>: <span class="tok-fn">null</span>   <span class="tok-comment">// null = top-level; UUID = sub-category</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-delete">DELETE</span>
+          <span class="ep-path">/api/v1/categories/{category_id}</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body">
+          <p>Delete a category. Children's <code>parent_id</code> is set to <code>NULL</code> by foreign key cascade.</p>
+          <div class="ep-meta"><span class="badge badge-ok">204 No Content</span> &nbsp; <span class="badge badge-danger">404</span> Not found</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ORDER ENDPOINTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="api-orders">
+      <h2>Order Endpoints <code>/api/v1/orders</code></h2>
+      <div class="callout callout-info">
+        <span class="callout-label">ℹ️ All order endpoints require authentication (JWT Bearer token)</span>
+        <p>The order lifecycle: <code>pending → confirmed → shipped → delivered</code> or <code>cancelled</code>.</p>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-post">POST</span>
+          <span class="ep-path">/api/v1/orders/</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body">
+          <p>Create a new order. Internal flow: validate cart → check stock → decrement stock → insert order + items → call <code>mcp-inventory: bulk_update_stock</code> → fire-and-forget <code>mcp-notifications: send_order_confirmation</code>.</p>
+          <div class="pre-label">Request Body</div>
+          <pre><code>{
+  <span class="tok-key">"items"</span>: [
+    { <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"quantity"</span>: <span class="tok-num">2</span> },
+    { <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"quantity"</span>: <span class="tok-num">1</span> }
+  ],
+  <span class="tok-key">"shipping_address"</span>: {
+    <span class="tok-key">"street"</span>: <span class="tok-string">"123 Main St"</span>,
+    <span class="tok-key">"city"</span>: <span class="tok-string">"Mumbai"</span>,
+    <span class="tok-key">"state"</span>: <span class="tok-string">"MH"</span>,
+    <span class="tok-key">"pincode"</span>: <span class="tok-string">"400001"</span>
+  }
+}</code></pre>
+          <div class="pre-label">Response 201</div>
+          <pre><code>{
+  <span class="tok-key">"id"</span>: <span class="tok-string">"order-uuid"</span>,
+  <span class="tok-key">"status"</span>: <span class="tok-string">"pending"</span>,
+  <span class="tok-key">"total_amount"</span>: <span class="tok-string">"5999.00"</span>,
+  <span class="tok-key">"items"</span>: [...],
+  <span class="tok-key">"created_at"</span>: <span class="tok-string">"2026-04-10T12:00:00Z"</span>
+}</code></pre>
+          <div class="ep-meta"><span class="badge badge-danger">400</span> Insufficient stock &nbsp; <span class="badge badge-danger">404</span> Product not found</div>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/orders/</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body">
+          <p>List all orders belonging to the authenticated user. Admins see all orders.</p>
+          <div class="ep-meta"><strong>Query:</strong> <code>skip</code>, <code>limit</code>, <code>status</code> (filter by status)</div>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-path">/api/v1/orders/{order_id}</span>
+          <span class="ep-desc badge badge-auth">JWT required</span>
+        </div>
+        <div class="ep-body"><p>Fetch a specific order by UUID. Users can only access their own orders.</p></div>
+      </div>
+
+      <div class="ep-card">
+        <div class="ep-header">
+          <span class="badge badge-patch">PATCH</span>
+          <span class="ep-path">/api/v1/orders/{order_id}/status</span>
+          <span class="ep-desc badge badge-admin">Admin only</span>
+        </div>
+        <div class="ep-body">
+          <p>Update order status. Valid transitions: <code>pending → confirmed</code>, <code>confirmed → shipped</code>, <code>shipped → delivered</code>, <code>pending → cancelled</code>.</p>
+          <div class="pre-label">Request Body</div>
+          <pre><code>{ <span class="tok-key">"status"</span>: <span class="tok-string">"shipped"</span> }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP OVERVIEW
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-overview">
+      <h2>MCP Servers Overview</h2>
+      <p>
+        ShopWave uses the <strong>Model Context Protocol (MCP)</strong> to decompose business logic into isolated, independently deployable services.
+        Each MCP server is a FastMCP application exposing tools via JSON-RPC 2.0 over SSE transport.
+        The FastAPI backend is the <em>sole consumer</em> of these servers — they are never directly exposed to the internet.
+      </p>
+      <div class="callout callout-warn">
+        <span class="callout-label">⚠️ Internal Auth</span>
+        <p>All calls from FastAPI to MCP servers must include the <code>X-MCP-API-Key</code> header. Each MCP server validates this header against the <code>MCP_INTERNAL_API_KEY</code> environment variable. Requests without a valid key return HTTP 403.</p>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Server</th><th>Default Port</th><th>Tools</th><th>External Dependencies</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">mcp-inventory</td><td>8001</td><td>3 tools</td><td>PostgreSQL (asyncpg)</td></tr>
+            <tr><td class="td-name">mcp-payments</td><td>8002</td><td>3 tools</td><td>Razorpay SDK</td></tr>
+            <tr><td class="td-name">mcp-search</td><td>8003</td><td>3 tools</td><td>PostgreSQL + pgvector, Anthropic (Voyage-3)</td></tr>
+            <tr><td class="td-name">mcp-notifications</td><td>8004</td><td>2 tools</td><td>SendGrid v3 API</td></tr>
+            <tr><td class="td-name">mcp-analytics</td><td>8005</td><td>4 tools</td><td>PostgreSQL (asyncpg)</td></tr>
+            <tr><td class="td-name">mcp-content</td><td>8006</td><td>2 tools</td><td>Anthropic Claude API</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>MCPClient — How FastAPI Calls MCP Servers</h3>
+      <p>The FastAPI backend uses an <code>MCPClient</code> helper class that wraps <code>httpx.AsyncClient</code> to send JSON-RPC 2.0 requests:</p>
+      <pre><code><span class="tok-kw">class</span> <span class="tok-type">MCPClient</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, base_url: str, api_key: str):
+        self.base_url = base_url
+        self.headers = {<span class="tok-string">"X-MCP-API-Key"</span>: api_key, <span class="tok-string">"Content-Type"</span>: <span class="tok-string">"application/json"</span>}
+
+    <span class="tok-kw">async def</span> <span class="tok-fn">call_tool</span>(self, tool_name: str, arguments: dict) -&gt; dict:
+        payload = {
+            <span class="tok-string">"jsonrpc"</span>: <span class="tok-string">"2.0"</span>,
+            <span class="tok-string">"id"</span>: str(uuid4()),
+            <span class="tok-string">"method"</span>: <span class="tok-string">"tools/call"</span>,
+            <span class="tok-string">"params"</span>: {<span class="tok-string">"name"</span>: tool_name, <span class="tok-string">"arguments"</span>: arguments},
+        }
+        <span class="tok-kw">async with</span> httpx.AsyncClient(timeout=<span class="tok-num">30.0</span>) <span class="tok-kw">as</span> client:
+            resp = <span class="tok-kw">await</span> client.post(
+                f<span class="tok-string">"{self.base_url}/mcp"</span>,
+                json=payload, headers=self.headers,
+            )
+            resp.raise_for_status()
+            result = resp.json().get(<span class="tok-string">"result"</span>, {})
+            <span class="tok-comment"># MCP content is JSON-encoded in result.content[0].text</span>
+            content = result.get(<span class="tok-string">"content"</span>, [{}])[<span class="tok-num">0</span>].get(<span class="tok-string">"text"</span>, <span class="tok-string">"{}"</span>)
+            <span class="tok-kw">return</span> json.loads(content)
+
+<span class="tok-comment"># Instantiate clients (registered as singleton in FastAPI lifespan)</span>
+inventory_mcp = MCPClient(<span class="tok-string">"http://mcp-inventory:8001"</span>, MCP_KEY)
+payments_mcp  = MCPClient(<span class="tok-string">"http://mcp-payments:8002"</span>, MCP_KEY)
+search_mcp    = MCPClient(<span class="tok-string">"http://mcp-search:8003"</span>, MCP_KEY)
+notify_mcp    = MCPClient(<span class="tok-string">"http://mcp-notifications:8004"</span>, MCP_KEY)
+analytics_mcp = MCPClient(<span class="tok-string">"http://mcp-analytics:8005"</span>, MCP_KEY)
+content_mcp   = MCPClient(<span class="tok-string">"http://mcp-content:8006"</span>, MCP_KEY)</code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP INVENTORY
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-inventory">
+      <h2>MCP — Inventory Server <span class="badge badge-neutral">:8001</span></h2>
+      <p>Stock level monitoring and reorder intelligence. Connects directly to PostgreSQL via asyncpg. All queries target the <code>products</code> table.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header">
+          <span class="mcp-tool-name">check_stock_levels</span>
+          <span class="badge badge-neutral">async</span>
+        </div>
+        <div class="mcp-body">
+          <p>Return current stock quantities and status labels for a list of product UUIDs.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">check_stock_levels</span>(product_ids: list[str]) -&gt; dict:
+    <span class="tok-comment"># Status labels:
+    #   qty = 0    → "out_of_stock"
+    #   qty &lt; 10   → "low_stock"
+    #   qty >= 10  → "in_stock"</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"stock_levels"</span>: [
+    { <span class="tok-key">"id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"name"</span>: <span class="tok-string">"Widget A"</span>, <span class="tok-key">"stock_quantity"</span>: <span class="tok-num">0</span>, <span class="tok-key">"status"</span>: <span class="tok-string">"out_of_stock"</span> }
+  ],
+  <span class="tok-key">"checked_count"</span>: <span class="tok-num">3</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header">
+          <span class="mcp-tool-name">suggest_reorder</span>
+          <span class="badge badge-neutral">async</span>
+        </div>
+        <div class="mcp-body">
+          <p>AI-ready reorder recommendation based on 30-day sales velocity. Calculates days until stockout at the current sell rate.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">suggest_reorder</span>(product_id: str, lead_time_days: int = <span class="tok-num">7</span>) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid"</span>,
+  <span class="tok-key">"product_name"</span>: <span class="tok-string">"Widget B"</span>,
+  <span class="tok-key">"current_stock"</span>: <span class="tok-num">5</span>,
+  <span class="tok-key">"daily_velocity"</span>: <span class="tok-num">2.0</span>,      <span class="tok-comment">// units/day avg over 30 days</span>
+  <span class="tok-key">"days_until_stockout"</span>: <span class="tok-num">2.5</span>,
+  <span class="tok-key">"urgency"</span>: <span class="tok-string">"urgent"</span>,           <span class="tok-comment">// "urgent" | "recommended" | "optional"</span>
+  <span class="tok-key">"suggested_reorder_quantity"</span>: <span class="tok-num">60</span>,
+  <span class="tok-key">"lead_time_days"</span>: <span class="tok-num">7</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header">
+          <span class="mcp-tool-name">bulk_update_stock</span>
+          <span class="badge badge-neutral">async</span>
+        </div>
+        <div class="mcp-body">
+          <p>Batch update stock quantities in a single database transaction. Positive delta = received stock; negative = manual reduction. All updates succeed or all roll back.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">bulk_update_stock</span>(updates: list[dict]) -&gt; dict:
+    <span class="tok-comment"># Each dict: { "product_id": str, "quantity_delta": int }
+    # Uses GREATEST(0, stock_quantity + delta) — never goes negative</span></code></pre>
+          <div class="pre-label">Argument Example</div>
+          <pre><code>[
+  { <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid-1"</span>, <span class="tok-key">"quantity_delta"</span>: -<span class="tok-num">2</span> },  <span class="tok-comment">// order placed</span>
+  { <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid-2"</span>, <span class="tok-key">"quantity_delta"</span>: <span class="tok-num">50</span> }  <span class="tok-comment">// stock received</span>
+]</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"updated"</span>: [<span class="tok-comment">/* array of updated products */</span>],
+  <span class="tok-key">"failed"</span>: [],
+  <span class="tok-key">"updated_count"</span>: <span class="tok-num">2</span>,
+  <span class="tok-key">"failed_count"</span>: <span class="tok-num">0</span>
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP PAYMENTS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-payments">
+      <h2>MCP — Payments Server <span class="badge badge-neutral">:8002</span></h2>
+      <p>Abstracts Razorpay payment operations. Swapping to Stripe requires changes only to this server, not FastAPI endpoints.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">create_payment_intent</span></div>
+        <div class="mcp-body">
+          <p>Create a Razorpay order object (equivalent to Stripe's PaymentIntent). Returns the Razorpay order ID that the frontend passes to the Razorpay JS SDK.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">create_payment_intent</span>(
+    order_id: str,        <span class="tok-comment">// ShopWave internal UUID (used as Razorpay receipt)</span>
+    amount_paise: int,    <span class="tok-comment">// e.g. ₹29.99 → 2999 paise</span>
+    currency: str = <span class="tok-string">"INR"</span>
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"razorpay_order_id"</span>: <span class="tok-string">"order_xyz"</span>,
+  <span class="tok-key">"amount"</span>: <span class="tok-num">299900</span>,
+  <span class="tok-key">"currency"</span>: <span class="tok-string">"INR"</span>,
+  <span class="tok-key">"status"</span>: <span class="tok-string">"created"</span>,
+  <span class="tok-key">"shopwave_order_id"</span>: <span class="tok-string">"uuid"</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">verify_payment</span></div>
+        <div class="mcp-body">
+          <p>Verify the HMAC-SHA256 signature Razorpay attaches to every payment callback. <strong>Critical security step</strong> — without this, a malicious client could send a fake "payment successful" payload.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">verify_payment</span>(
+    razorpay_order_id: str,
+    razorpay_payment_id: str,
+    razorpay_signature: str,
+) -&gt; dict:
+    <span class="tok-comment"># message = f"{razorpay_order_id}|{razorpay_payment_id}"
+    # expected = HMAC-SHA256(secret, message).hexdigest()
+    # Uses hmac.compare_digest → constant-time (timing attack safe)</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"verified"</span>: <span class="tok-fn">true</span>, <span class="tok-key">"payment_id"</span>: <span class="tok-string">"pay_xyz"</span> }
+<span class="tok-comment">// { "verified": false, "payment_id": null } — on signature mismatch</span></code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">process_refund</span></div>
+        <div class="mcp-body">
+          <p>Issue a full or partial refund via Razorpay.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">process_refund</span>(
+    payment_id: str,
+    amount_paise: int | <span class="tok-fn">None</span> = <span class="tok-fn">None</span>,  <span class="tok-comment">// None = full refund</span>
+    reason: str = <span class="tok-string">"customer_request"</span>,
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"refund_id"</span>: <span class="tok-string">"rfnd_xyz"</span>, <span class="tok-key">"amount"</span>: <span class="tok-num">299900</span>, <span class="tok-key">"status"</span>: <span class="tok-string">"processed"</span> }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP SEARCH
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-search">
+      <h2>MCP — Search Server <span class="badge badge-neutral">:8003</span></h2>
+      <p>Semantic product search using PostgreSQL pgvector and Anthropic Voyage-3 embeddings. Unlike ILIKE keyword search, embeddings capture semantic meaning — "phone" and "smartphone" produce nearby vectors.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">semantic_search</span></div>
+        <div class="mcp-body">
+          <p>Rank products by semantic similarity to a query string using pgvector's <code>&lt;=&gt;</code> cosine distance operator.</p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">semantic_search</span>(
+    query: str,                       <span class="tok-comment">// Free-text e.g. "waterproof running shoes"</span>
+    limit: int = <span class="tok-num">20</span>,                 <span class="tok-comment">// Max results (1-100)</span>
+    category_id: str | <span class="tok-fn">None</span> = <span class="tok-fn">None</span>,  <span class="tok-comment">// Optional UUID category filter</span>
+    min_price: float | <span class="tok-fn">None</span> = <span class="tok-fn">None</span>,  <span class="tok-comment">// Lower price bound (INR)</span>
+    max_price: float | <span class="tok-fn">None</span> = <span class="tok-fn">None</span>,  <span class="tok-comment">// Upper price bound (INR)</span>
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"query"</span>: <span class="tok-string">"waterproof shoes"</span>,
+  <span class="tok-key">"results"</span>: [
+    {
+      <span class="tok-key">"id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"name"</span>: <span class="tok-string">"..."</span>, <span class="tok-key">"slug"</span>: <span class="tok-string">"..."</span>,
+      <span class="tok-key">"price"</span>: <span class="tok-string">"2999.00"</span>, <span class="tok-key">"image_url"</span>: <span class="tok-string">"..."</span>,
+      <span class="tok-key">"stock_quantity"</span>: <span class="tok-num">42</span>,
+      <span class="tok-key">"similarity_score"</span>: <span class="tok-num">0.923</span>  <span class="tok-comment">// 1 - cosine_distance</span>
+    }
+  ],
+  <span class="tok-key">"count"</span>: <span class="tok-num">12</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">index_product</span></div>
+        <div class="mcp-body">
+          <p>Compute and persist the 1024-dim Voyage-3 embedding for a single product. <strong>Must be called after every CREATE or UPDATE to the products table.</strong></p>
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">index_product</span>(product_id: str) -&gt; dict:
+    <span class="tok-comment"># Combines name + description into one text blob for richer vector</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"indexed"</span>: <span class="tok-fn">true</span>, <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid"</span> }</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">reindex_catalogue</span></div>
+        <div class="mcp-body">
+          <p>Re-embed every active product. Run this after bulk imports or after switching embedding models. May take several minutes for large catalogues.</p>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"reindexed"</span>: <span class="tok-num">1500</span>, <span class="tok-key">"errors"</span>: <span class="tok-num">2</span>, <span class="tok-key">"total"</span>: <span class="tok-num">1502</span> }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP NOTIFICATIONS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-notifications">
+      <h2>MCP — Notifications Server <span class="badge badge-neutral">:8004</span></h2>
+      <p>Transactional email delivery via SendGrid v3 API. Future: swap for AWS SES or upgrade to Claude-generated personalised copy.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">send_order_confirmation</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">send_order_confirmation</span>(
+    user_email: str,
+    user_name: str,
+    order_id: str,
+    order_total: str,    <span class="tok-comment">// Pre-formatted e.g. "₹1,234.00"</span>
+    items: list[dict],   <span class="tok-comment">// [{ "name", "quantity", "unit_price" }]</span>
+) -&gt; dict:</code></pre>
+          <p>Sends a rich HTML order confirmation email with an itemised table. Uses first 8 chars of order UUID as display reference.</p>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"sent"</span>: <span class="tok-fn">true</span>, <span class="tok-key">"recipient"</span>: <span class="tok-string">"john@example.com"</span>, <span class="tok-key">"order_id"</span>: <span class="tok-string">"uuid"</span> }</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">send_shipping_update</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">send_shipping_update</span>(
+    user_email: str,
+    user_name: str,
+    order_id: str,
+    tracking_number: str,
+    carrier: str,
+    tracking_url: str | <span class="tok-fn">None</span> = <span class="tok-fn">None</span>,
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{ <span class="tok-key">"sent"</span>: <span class="tok-fn">true</span>, <span class="tok-key">"recipient"</span>: <span class="tok-string">"john@example.com"</span> }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP ANALYTICS
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-analytics">
+      <h2>MCP — Analytics Server <span class="badge badge-neutral">:8005</span></h2>
+      <p>Business intelligence queries. All queries exclude <code>cancelled</code> and <code>refunded</code> orders for accurate revenue reporting.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">get_sales_summary</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">get_sales_summary</span>(date_from: str, date_to: str) -&gt; dict:
+    <span class="tok-comment"># date_from, date_to: ISO "YYYY-MM-DD" (inclusive range)</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"period"</span>: { <span class="tok-key">"from"</span>: <span class="tok-string">"2026-04-01"</span>, <span class="tok-key">"to"</span>: <span class="tok-string">"2026-04-30"</span> },
+  <span class="tok-key">"total_revenue"</span>: <span class="tok-num">125430.50</span>,
+  <span class="tok-key">"order_count"</span>: <span class="tok-num">342</span>,
+  <span class="tok-key">"avg_order_value"</span>: <span class="tok-num">366.75</span>,
+  <span class="tok-key">"unique_customers"</span>: <span class="tok-num">289</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">get_top_products</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">get_top_products</span>(limit: int = <span class="tok-num">10</span>, metric: str = <span class="tok-string">"revenue"</span>) -&gt; dict:
+    <span class="tok-comment"># metric: "revenue" | "quantity"</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"metric"</span>: <span class="tok-string">"revenue"</span>,
+  <span class="tok-key">"top_products"</span>: [
+    { <span class="tok-key">"product_id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"name"</span>: <span class="tok-string">"..."</span>, <span class="tok-key">"total_revenue"</span>: <span class="tok-num">45230.0</span>, <span class="tok-key">"total_quantity_sold"</span>: <span class="tok-num">152</span> }
+  ]
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">get_revenue_by_day</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">get_revenue_by_day</span>(days: int = <span class="tok-num">30</span>) -&gt; dict:
+    <span class="tok-comment"># days: lookback window (max 365). Used for dashboard charts.</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"days"</span>: <span class="tok-num">30</span>,
+  <span class="tok-key">"series"</span>: [
+    { <span class="tok-key">"day"</span>: <span class="tok-string">"2026-04-01"</span>, <span class="tok-key">"order_count"</span>: <span class="tok-num">12</span>, <span class="tok-key">"revenue"</span>: <span class="tok-num">4230.50</span> },
+    ...
+  ]
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">get_low_stock_report</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">get_low_stock_report</span>(threshold: int = <span class="tok-num">10</span>) -&gt; dict:
+    <span class="tok-comment"># Returns all active products with stock_quantity &lt;= threshold</span></code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"threshold"</span>: <span class="tok-num">10</span>,
+  <span class="tok-key">"products"</span>: [
+    { <span class="tok-key">"id"</span>: <span class="tok-string">"uuid"</span>, <span class="tok-key">"name"</span>: <span class="tok-string">"Widget A"</span>, <span class="tok-key">"sku"</span>: <span class="tok-string">"SKU-001"</span>, <span class="tok-key">"stock_quantity"</span>: <span class="tok-num">0</span>, <span class="tok-key">"status"</span>: <span class="tok-string">"out_of_stock"</span> }
+  ],
+  <span class="tok-key">"count"</span>: <span class="tok-num">5</span>
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MCP CONTENT
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="mcp-content">
+      <h2>MCP — Content Server (AI) <span class="badge badge-neutral">:8006</span></h2>
+      <p>Uses <strong>Claude Sonnet 4</strong> (<code>claude-sonnet-4-20250514</code>) to generate product copy and SEO metadata. Returns structured JSON — no markdown wrappers.</p>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">generate_product_description</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">generate_product_description</span>(
+    product_name: str,
+    category: str,          <span class="tok-comment">// e.g. "Electronics > Phones"</span>
+    key_features: list[str],
+    price: str,             <span class="tok-comment">// e.g. "₹29,999"</span>
+    tone: str = <span class="tok-string">"professional"</span>,  <span class="tok-comment">// "professional" | "casual" | "luxury"</span>
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"short_description"</span>: <span class="tok-string">"Premium waterproof running shoes..."</span>,  <span class="tok-comment">// ≤160 chars (SEO meta)</span>
+  <span class="tok-key">"long_description"</span>: <span class="tok-string">"3-4 paragraphs..."</span>,
+  <span class="tok-key">"bullet_points"</span>: [<span class="tok-string">"Waterproof Gore-Tex upper"</span>, <span class="tok-string">"..."</span>]  <span class="tok-comment">// 4-6 bullets</span>
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="mcp-card">
+        <div class="mcp-header"><span class="mcp-tool-name">generate_meta_tags</span></div>
+        <div class="mcp-body">
+          <div class="pre-label">Signature</div>
+          <pre><code><span class="tok-kw">async def</span> <span class="tok-fn">generate_meta_tags</span>(
+    product_name: str,
+    short_description: str,
+    category: str,
+) -&gt; dict:</code></pre>
+          <div class="pre-label">Returns</div>
+          <pre><code>{
+  <span class="tok-key">"title"</span>: <span class="tok-string">"Nike Air Zoom Pegasus — Best Running Shoes"</span>,   <span class="tok-comment">// 50-60 chars</span>
+  <span class="tok-key">"meta_description"</span>: <span class="tok-string">"Waterproof running shoes with..."</span>           <span class="tok-comment">// 140-155 chars</span>
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         DATABASE SCHEMA
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="db-schema">
+      <h2>Database Schema</h2>
+      <p>All tables use <code>UUID</code> primary keys (v4) and include <code>created_at</code> / <code>updated_at</code> timestamps managed by the database. PostgreSQL 18 with the <code>pgvector</code> extension installed.</p>
+    </section>
+
+    <section id="db-users">
+      <h3>Table: <code>users</code></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">id</td><td>UUID</td><td>PK, default gen_random_uuid()</td><td>User primary key</td></tr>
+            <tr><td class="td-name">username</td><td>VARCHAR(50)</td><td>NOT NULL, UNIQUE</td><td>Publicly visible handle</td></tr>
+            <tr><td class="td-name">email</td><td>VARCHAR(255)</td><td>NOT NULL, UNIQUE</td><td>Used for login</td></tr>
+            <tr><td class="td-name">hashed_password</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>Argon2id hash</td></tr>
+            <tr><td class="td-name">full_name</td><td>VARCHAR(255)</td><td>NULLABLE</td><td>Display name</td></tr>
+            <tr><td class="td-name">role</td><td>VARCHAR(20)</td><td>NOT NULL, default 'customer'</td><td>'customer' or 'admin'</td></tr>
+            <tr><td class="td-name">is_active</td><td>BOOLEAN</td><td>NOT NULL, default true</td><td>Soft disable account</td></tr>
+            <tr><td class="td-name">created_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td>Account creation time</td></tr>
+            <tr><td class="td-name">updated_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td>Auto-updated via trigger</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="db-products">
+      <h3>Table: <code>products</code></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">id</td><td>UUID</td><td>PK</td><td>Product primary key</td></tr>
+            <tr><td class="td-name">name</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>Product title</td></tr>
+            <tr><td class="td-name">slug</td><td>VARCHAR(255)</td><td>NOT NULL, UNIQUE</td><td>URL-friendly identifier</td></tr>
+            <tr><td class="td-name">description</td><td>TEXT</td><td>NULLABLE</td><td>Long-form product copy</td></tr>
+            <tr><td class="td-name">price</td><td>NUMERIC(12,2)</td><td>NOT NULL, ≥0</td><td>INR price; Numeric avoids float rounding</td></tr>
+            <tr><td class="td-name">sku</td><td>VARCHAR(100)</td><td>UNIQUE, NULLABLE</td><td>Stock Keeping Unit</td></tr>
+            <tr><td class="td-name">stock_quantity</td><td>INTEGER</td><td>NOT NULL, default 0, ≥0</td><td>Available inventory</td></tr>
+            <tr><td class="td-name">image_url</td><td>VARCHAR(500)</td><td>NULLABLE</td><td>Primary product image path</td></tr>
+            <tr><td class="td-name">category_id</td><td>UUID</td><td>FK → categories.id, ON DELETE SET NULL</td><td>Product category</td></tr>
+            <tr><td class="td-name">is_active</td><td>BOOLEAN</td><td>NOT NULL, default true</td><td>Soft delete</td></tr>
+            <tr><td class="td-name">embedding</td><td>VECTOR(1024)</td><td>NULLABLE</td><td>pgvector: Voyage-3 embedding for semantic search</td></tr>
+            <tr><td class="td-name">created_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td></td></tr>
+            <tr><td class="td-name">updated_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Index:</strong> <code>CREATE INDEX ON products USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);</code> — required for fast ANN search with pgvector.</p>
+    </section>
+
+    <section id="db-categories">
+      <h3>Table: <code>categories</code></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th><th>Constraints</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">id</td><td>UUID</td><td>PK</td></tr>
+            <tr><td class="td-name">name</td><td>VARCHAR(100)</td><td>NOT NULL</td></tr>
+            <tr><td class="td-name">slug</td><td>VARCHAR(100)</td><td>NOT NULL, UNIQUE</td></tr>
+            <tr><td class="td-name">parent_id</td><td>UUID</td><td>FK → categories.id (self-referential), ON DELETE SET NULL</td></tr>
+            <tr><td class="td-name">created_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="db-orders">
+      <h3>Table: <code>orders</code></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">id</td><td>UUID</td><td>PK</td><td>Order identifier</td></tr>
+            <tr><td class="td-name">user_id</td><td>UUID</td><td>FK → users.id, NOT NULL</td><td>Order owner</td></tr>
+            <tr><td class="td-name">status</td><td>VARCHAR(20)</td><td>NOT NULL, default 'pending'</td><td>State machine: pending → confirmed → shipped → delivered | cancelled | refunded</td></tr>
+            <tr><td class="td-name">total_amount</td><td>NUMERIC(12,2)</td><td>NOT NULL</td><td>Sum of all line items</td></tr>
+            <tr><td class="td-name">shipping_address</td><td>JSONB</td><td>NULLABLE</td><td>Structured address object</td></tr>
+            <tr><td class="td-name">payment_intent_id</td><td>VARCHAR(255)</td><td>NULLABLE</td><td>Razorpay order ID</td></tr>
+            <tr><td class="td-name">payment_id</td><td>VARCHAR(255)</td><td>NULLABLE</td><td>Razorpay payment ID (post-confirmation)</td></tr>
+            <tr><td class="td-name">created_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td>Also used for analytics date range queries — index this</td></tr>
+            <tr><td class="td-name">updated_at</td><td>TIMESTAMPTZ</td><td>NOT NULL, default NOW()</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="db-order-items">
+      <h3>Table: <code>order_items</code></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th><th>Constraints</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">id</td><td>UUID</td><td>PK</td></tr>
+            <tr><td class="td-name">order_id</td><td>UUID</td><td>FK → orders.id, ON DELETE CASCADE</td></tr>
+            <tr><td class="td-name">product_id</td><td>UUID</td><td>FK → products.id, NOT NULL</td></tr>
+            <tr><td class="td-name">quantity</td><td>INTEGER</td><td>NOT NULL, ≥1</td></tr>
+            <tr><td class="td-name">unit_price</td><td>NUMERIC(12,2)</td><td>NOT NULL</td></tr>
+            <tr><td class="td-name">line_total</td><td>NUMERIC(12,2)</td><td>NOT NULL (= quantity × unit_price)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECURITY
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="sec-auth">
+      <h2>Security — Authentication Flow</h2>
+      <p>ShopWave uses a dual-token strategy combining short-lived access tokens with long-lived refresh tokens stored in HttpOnly cookies.</p>
+      <div class="arch-diagram">
+<span class="arch-arr">1. User submits email + password to POST /api/v1/auth/login</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">2. FastAPI hashes provided password with Argon2id → compares to stored hash</span>
+<span class="arch-arr">   │ (pwdlib[argon2] — memory-hard, resistant to GPU brute force)</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">3. On success → create_access_token(user_id, expires=15min)  via PyJWT</span>
+<span class="arch-kw">             + create_refresh_token(user_id, expires=7days)</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">4. Response:</span>
+<span class="arch-arr">   Body:   { access_token: "eyJ...", token_type: "bearer" }</span>
+<span class="arch-arr">   Cookie: Set-Cookie: refresh_token=eyJ...; HttpOnly; Secure; SameSite=lax; Max-Age=604800</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">5. Client stores access_token in memory (Zustand authStore) — NOT localStorage</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">6. All protected requests: Authorization: Bearer {access_token}</span>
+<span class="arch-arr">   │</span>
+<span class="arch-arr">   ▼</span>
+<span class="arch-kw">7. On 401 → axios interceptor calls POST /auth/refresh (cookie sent automatically)</span>
+<span class="arch-arr">         → new access token issued → original request retried</span>
+      </div>
+    </section>
+
+    <section id="sec-jwt">
+      <h3>JWT Structure</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Claim</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">sub</td><td>User UUID (string)</td></tr>
+            <tr><td class="td-name">iat</td><td>Issued-at timestamp (UNIX epoch)</td></tr>
+            <tr><td class="td-name">exp</td><td>Expiry timestamp (15 min for access, 7 days for refresh)</td></tr>
+            <tr><td class="td-name">type</td><td>"access" or "refresh"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Algorithm:</strong> HS256 using <code>SECRET_KEY</code>. For higher security environments, switch to RS256 with asymmetric keys.</p>
+    </section>
+
+    <section id="sec-mcp-key">
+      <h3>MCP Internal API Key</h3>
+      <p>All FastAPI → MCP server calls include a custom <code>X-MCP-API-Key</code> header. Each MCP server validates this key in its middleware before executing any tool call. Generate with:</p>
+      <pre><code>python -c "import secrets; print(secrets.token_hex(32))"</code></pre>
+      <div class="callout callout-danger">
+        <span class="callout-label">🚨 Security</span>
+        <p>MCP servers must NEVER be exposed on public ports. In Docker Compose, omit the <code>ports:</code> key from MCP service definitions — they communicate only on the internal <code>shopwave_net</code> bridge network.</p>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         FRONTEND
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="fe-routes">
+      <h2>Frontend — Routes</h2>
+      <p>React Router v7 (data router). All pages rendered inside the <code>&lt;Layout&gt;</code> component (shared Navbar + Footer).</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Path</th><th>Component</th><th>Auth</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">/</td><td>Home</td><td><span class="badge badge-pub">Public</span></td><td>Hero, featured products, search</td></tr>
+            <tr><td class="td-name">/products</td><td>Products</td><td><span class="badge badge-pub">Public</span></td><td>Product listing with filters</td></tr>
+            <tr><td class="td-name">/products/:slug</td><td>ProductDetail</td><td><span class="badge badge-pub">Public</span></td><td>Single product page with add-to-cart</td></tr>
+            <tr><td class="td-name">/cart</td><td>Cart</td><td><span class="badge badge-pub">Public</span></td><td>Shopping cart review</td></tr>
+            <tr><td class="td-name">/auth</td><td>Auth</td><td><span class="badge badge-pub">Public</span></td><td>Login / Register form</td></tr>
+            <tr><td class="td-name">/checkout</td><td>Checkout</td><td><span class="badge badge-auth">Protected</span></td><td>Address + PaymentModal (Razorpay SDK)</td></tr>
+            <tr><td class="td-name">/orders</td><td>Orders</td><td><span class="badge badge-auth">Protected</span></td><td>Order history list</td></tr>
+            <tr><td class="td-name">/profile</td><td>Profile</td><td><span class="badge badge-auth">Protected</span></td><td>User profile editor</td></tr>
+            <tr><td class="td-name">*</td><td>Redirect /</td><td>—</td><td>404 catch-all</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="fe-store">
+      <h3>State Management — Zustand</h3>
+      <div class="grid-2">
+        <div class="info-card">
+          <h4>authStore</h4>
+          <p>Holds <code>user</code>, <code>accessToken</code>, <code>isAuthenticated</code>. Methods: <code>setAuth()</code>, <code>logout()</code>. Access token stored in memory only — never localStorage.</p>
+        </div>
+        <div class="info-card">
+          <h4>cartStore</h4>
+          <p>Holds <code>items[]</code> with <code>product</code> and <code>quantity</code>. Methods: <code>addItem()</code>, <code>removeItem()</code>, <code>updateQty()</code>, <code>clearCart()</code>. Persisted to <code>localStorage</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="fe-hooks">
+      <h3>Custom Hooks</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Hook</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">useSemanticSearch</td><td>Calls <code>POST /api/v1/search</code> → mcp-search. Debounced, 300ms, powered by TanStack Query.</td></tr>
+            <tr><td class="td-name">useProducts</td><td>Fetches product list with filters; uses TanStack Query with 2-min stale time.</td></tr>
+            <tr><td class="td-name">useOrders</td><td>Fetches current user's orders; invalidates on order create.</td></tr>
+            <tr><td class="td-name">useAuth</td><td>Wraps login/register API calls; handles token storage and store updates.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="fe-vite">
+      <h3>Vite Configuration Highlights</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Config</th><th>Value</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">Dev port</td><td>5173</td><td>Default Vite port</td></tr>
+            <tr><td class="td-name">Alias @</td><td>./src</td><td>Clean imports: <code>import X from '@/components/X'</code></td></tr>
+            <tr><td class="td-name">Dev proxy /api</td><td>→ http://localhost:8000</td><td>Avoids CORS in local dev (Docker uses Nginx instead)</td></tr>
+            <tr><td class="td-name">Build sourcemaps</td><td>false</td><td>Production: don't expose source</td></tr>
+            <tr><td class="td-name">Manual chunks</td><td>vendor: [react, react-dom, react-router-dom]</td><td>Browser caches vendor chunk separately</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         IMPLEMENTATION SEQUENCE
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="impl-sequence">
+      <h2>MCP Integration Sequence</h2>
+      <p>Follow this Foundation-First order when implementing MCP server integration into the ShopWave backend. Each phase builds on the previous.</p>
+
+      <h3>Phase 0 — Prerequisites</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Generate the internal API key</strong><pre><code>python -c "import secrets; print(secrets.token_hex(32))"
+<span class="tok-comment"># Copy output to MCP_INTERNAL_API_KEY in .env</span></code></pre></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Create pyproject.toml for each MCP server</strong> — each needs <code>mcp[cli]</code>, <code>asyncpg</code>, etc.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Enable pgvector extension</strong><pre><code>psql -U shopwave -d shopwave_db -c "CREATE EXTENSION IF NOT EXISTS vector;"</code></pre></div></div>
+      </div>
+
+      <h3>Phase 1 — Inventory MCP (Start Here)</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Create <code>mcp-servers/inventory/server.py</code> (already implemented — see above)</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Start server: <code>python mcp-servers/inventory/server.py</code> → listens on :8001</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Add <code>MCPClient</code> to FastAPI lifespan, inject into order creation endpoint</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Call <code>inventory_mcp.call_tool("bulk_update_stock", {...})</code> after order DB insert</div></div>
+      </div>
+
+      <h3>Phase 2 — Payments MCP</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Add <code>RAZORPAY_KEY_ID</code> + <code>RAZORPAY_KEY_SECRET</code> to <code>.env</code></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Start payments server on :8002</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Create <code>POST /api/v1/orders/{order_id}/payment/intent</code> endpoint that calls <code>payments_mcp.call_tool("create_payment_intent", ...)</code></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Create <code>POST /api/v1/orders/{order_id}/payment/verify</code> endpoint — verifies signature, updates order status to <code>confirmed</code></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">Wire the frontend <code>PaymentModal</code> to these two endpoints using the Razorpay JS SDK</div></div>
+      </div>
+
+      <h3>Phase 3 — Search MCP (Semantic Search)</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Add <code>ANTHROPIC_API_KEY</code> to <code>.env</code></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Start search server on :8003</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Run <code>reindex_catalogue</code> once to generate embeddings for existing products</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Create <code>GET /api/v1/search?q=...</code> endpoint that calls <code>search_mcp.call_tool("semantic_search", ...)</code></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">Call <code>index_product</code> on every product CREATE and UPDATE</div></div>
+      </div>
+
+      <h3>Phase 4 — Notifications + Analytics</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Add <code>SENDGRID_API_KEY</code> + <code>FROM_EMAIL</code> to <code>.env</code></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Fire <code>notify_mcp.call_tool("send_order_confirmation", ...)</code> as async fire-and-forget in order creation (use <code>asyncio.create_task()</code>)</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Add admin analytics endpoints that proxy to <code>analytics_mcp</code></div></div>
+      </div>
+
+      <h3>Phase 5 — Content (AI Copy Generation)</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Start content server on :8006</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Add admin endpoint <code>POST /api/v1/products/{id}/generate-content</code></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Call <code>content_mcp.call_tool("generate_product_description", ...)</code> and update the product record</div></div>
+      </div>
+    </section>
+
+    <section id="impl-mcp-client">
+      <h3>MCPClient — Full Implementation</h3>
+      <pre><code><span class="tok-comment"># backend/app/core/mcp_client.py</span>
+<span class="tok-kw">import</span> json
+<span class="tok-kw">from</span> uuid <span class="tok-kw">import</span> uuid4
+<span class="tok-kw">import</span> httpx
+<span class="tok-kw">from</span> app.core.config <span class="tok-kw">import</span> settings
+
+
+<span class="tok-kw">class</span> <span class="tok-type">MCPToolError</span>(Exception):
+    <span class="tok-string">"""Raised when an MCP server returns a JSON-RPC error response."""</span>
+
+
+<span class="tok-kw">class</span> <span class="tok-type">MCPClient</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, base_url: str):
+        self.base_url = base_url.rstrip(<span class="tok-string">"/"</span>)
+        self._headers = {
+            <span class="tok-string">"X-MCP-API-Key"</span>: settings.MCP_INTERNAL_API_KEY,
+            <span class="tok-string">"Content-Type"</span>: <span class="tok-string">"application/json"</span>,
+        }
+
+    <span class="tok-kw">async def</span> <span class="tok-fn">call_tool</span>(self, tool_name: str, arguments: dict) -&gt; dict:
+        <span class="tok-string">"""
+        Execute a named MCP tool and return the parsed result.
+        Raises MCPToolError on JSON-RPC errors.
+        Raises httpx.HTTPStatusError on non-2xx HTTP responses.
+        """</span>
+        payload = {
+            <span class="tok-string">"jsonrpc"</span>: <span class="tok-string">"2.0"</span>,
+            <span class="tok-string">"id"</span>: str(uuid4()),
+            <span class="tok-string">"method"</span>: <span class="tok-string">"tools/call"</span>,
+            <span class="tok-string">"params"</span>: {<span class="tok-string">"name"</span>: tool_name, <span class="tok-string">"arguments"</span>: arguments},
+        }
+        <span class="tok-kw">async with</span> httpx.AsyncClient(timeout=<span class="tok-num">30.0</span>) <span class="tok-kw">as</span> client:
+            resp = <span class="tok-kw">await</span> client.post(
+                f<span class="tok-string">"{self.base_url}/mcp"</span>,
+                json=payload,
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+
+        data = resp.json()
+        <span class="tok-kw">if</span> <span class="tok-string">"error"</span> <span class="tok-kw">in</span> data:
+            <span class="tok-kw">raise</span> MCPToolError(data[<span class="tok-string">"error"</span>].get(<span class="tok-string">"message"</span>, <span class="tok-string">"MCP error"</span>))
+
+        content = data.get(<span class="tok-string">"result"</span>, {}).get(<span class="tok-string">"content"</span>, [{}])[<span class="tok-num">0</span>].get(<span class="tok-string">"text"</span>, <span class="tok-string">"{}"</span>)
+        <span class="tok-kw">return</span> json.loads(content)
+
+
+<span class="tok-comment"># Singleton instances (create in FastAPI lifespan)</span>
+inventory_mcp     = MCPClient(settings.MCP_INVENTORY_URL)
+payments_mcp      = MCPClient(settings.MCP_PAYMENTS_URL)
+search_mcp        = MCPClient(settings.MCP_SEARCH_URL)
+notifications_mcp = MCPClient(settings.MCP_NOTIFICATIONS_URL)
+analytics_mcp     = MCPClient(settings.MCP_ANALYTICS_URL)
+content_mcp       = MCPClient(settings.MCP_CONTENT_URL)</code></pre>
+    </section>
+
+    <section id="impl-dataflow">
+      <h3>End-to-End Data Flow — Order Placement</h3>
+      <div class="arch-diagram">
+<span class="arch-h">User clicks "Place Order"</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">Frontend POST /api/v1/orders/</span>
+  body: { items: [...], shipping_address: {...} }
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">FastAPI: orders.create_order()</span>
+  <span class="arch-arr">├── 1. Validate JWT → get current_user</span>
+  <span class="arch-arr">├── 2. SQLAlchemy SELECT products WHERE id IN (item ids)</span>
+  <span class="arch-arr">├── 3. Check stock_quantity >= requested quantity for each item</span>
+  <span class="arch-arr">├── 4. Calculate total_amount (sum of unit_price × quantity)</span>
+  <span class="arch-arr">├── 5. SQLAlchemy INSERT orders row (status='pending')</span>
+  <span class="arch-arr">├── 6. SQLAlchemy INSERT order_items rows</span>
+  <span class="arch-arr">├── 7. SQLAlchemy UPDATE products SET stock_quantity -= quantity (each item)</span>
+  <span class="arch-arr">├── 8. await inventory_mcp.call_tool("bulk_update_stock", {...})</span>
+  <span class="arch-arr">└── 9. asyncio.create_task(notify_mcp.call_tool("send_order_confirmation", {...}))</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">Return 201: Order object → Frontend</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">Frontend renders PaymentModal</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">POST /api/v1/orders/{id}/payment/intent</span>
+  <span class="arch-arr">→ payments_mcp.call_tool("create_payment_intent", { order_id, amount_paise })</span>
+  <span class="arch-arr">← razorpay_order_id returned</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">Razorpay JS SDK opens payment modal (frontend)</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">On success callback:</span>
+<span class="arch-kw">POST /api/v1/orders/{id}/payment/verify</span>
+  <span class="arch-arr">→ payments_mcp.call_tool("verify_payment", { razorpay_order_id, razorpay_payment_id, signature })</span>
+  <span class="arch-arr">→ if verified: UPDATE orders SET status='confirmed', payment_id=razorpay_payment_id</span>
+        <span class="arch-arr">│</span>
+        <span class="arch-arr">▼</span>
+<span class="arch-kw">Frontend shows "Order Confirmed" 🎉</span>
+      </div>
+
+      <h3>Semantic Search Flow</h3>
+      <div class="arch-diagram">
+<span class="arch-kw">GET /api/v1/search?q=waterproof running shoes&limit=10</span>
+    <span class="arch-arr">│</span>
+    <span class="arch-arr">▼</span>
+<span class="arch-kw">FastAPI → search_mcp.call_tool("semantic_search", { query, limit })</span>
+    <span class="arch-arr">│</span>
+    <span class="arch-arr">▼</span>
+<span class="arch-kw">mcp-search: GET embedding from Anthropic Voyage-3 API (1024 dims)</span>
+    <span class="arch-arr">│</span>
+    <span class="arch-arr">▼</span>
+<span class="arch-kw">mcp-search: SQL with pgvector cosine distance (&lt;=&gt; operator)</span>
+    <span class="arch-arr">SELECT ... FROM products ORDER BY embedding &lt;=&gt; $1::vector LIMIT $2</span>
+    <span class="arch-arr">│</span>
+    <span class="arch-arr">▼</span>
+<span class="arch-kw">Returns ranked results with similarity_score field</span>
+      </div>
+    </section>
+
+    <section id="impl-testing">
+      <h2>Testing</h2>
+      <h3>Run Tests</h3>
+      <pre><code><span class="tok-comment"># From backend/ directory:</span>
+pytest --cov=app --cov-report=term-missing
+
+<span class="tok-comment"># Run a specific test file:</span>
+pytest mcp-servers/inventory/tests/test_stock.py -v
+
+<span class="tok-comment"># With asyncio mode auto (already configured in pyproject.toml):</span>
+pytest  <span class="tok-comment"># asyncio_mode = "auto" handles async tests</span></code></pre>
+
+      <h3>Sample Unit Test — Inventory MCP</h3>
+      <pre><code><span class="tok-comment"># mcp-servers/inventory/tests/test_stock.py</span>
+<span class="tok-kw">import</span> pytest
+<span class="tok-kw">from</span> unittest.mock <span class="tok-kw">import</span> AsyncMock, patch
+
+
+<span class="tok-kw">@pytest.mark.asyncio</span>
+<span class="tok-kw">async def</span> <span class="tok-fn">test_check_stock_levels_returns_correct_statuses</span>():
+    mock_rows = [
+        {<span class="tok-string">"id"</span>: <span class="tok-string">"uuid-1"</span>, <span class="tok-string">"name"</span>: <span class="tok-string">"A"</span>, <span class="tok-string">"stock_quantity"</span>: <span class="tok-num">0</span>,   <span class="tok-string">"status"</span>: <span class="tok-string">"out_of_stock"</span>},
+        {<span class="tok-string">"id"</span>: <span class="tok-string">"uuid-2"</span>, <span class="tok-string">"name"</span>: <span class="tok-string">"B"</span>, <span class="tok-string">"stock_quantity"</span>: <span class="tok-num">5</span>,   <span class="tok-string">"status"</span>: <span class="tok-string">"low_stock"</span>},
+        {<span class="tok-string">"id"</span>: <span class="tok-string">"uuid-3"</span>, <span class="tok-string">"name"</span>: <span class="tok-string">"C"</span>, <span class="tok-string">"stock_quantity"</span>: <span class="tok-num">100</span>, <span class="tok-string">"status"</span>: <span class="tok-string">"in_stock"</span>},
+    ]
+    <span class="tok-kw">with</span> patch(<span class="tok-string">"asyncpg.connect"</span>, new_callable=AsyncMock) <span class="tok-kw">as</span> mock_connect:
+        mock_conn = AsyncMock()
+        mock_conn.fetch.return_value = mock_rows
+        mock_connect.return_value = mock_conn
+
+        <span class="tok-kw">from</span> server <span class="tok-kw">import</span> check_stock_levels
+        result = <span class="tok-kw">await</span> check_stock_levels([<span class="tok-string">"uuid-1"</span>, <span class="tok-string">"uuid-2"</span>, <span class="tok-string">"uuid-3"</span>])
+
+    <span class="tok-kw">assert</span> result[<span class="tok-string">"checked_count"</span>] == <span class="tok-num">3</span>
+    statuses = {r[<span class="tok-string">"id"</span>]: r[<span class="tok-string">"status"</span>] <span class="tok-kw">for</span> r <span class="tok-kw">in</span> result[<span class="tok-string">"stock_levels"</span>]}
+    <span class="tok-kw">assert</span> statuses[<span class="tok-string">"uuid-1"</span>] == <span class="tok-string">"out_of_stock"</span>
+    <span class="tok-kw">assert</span> statuses[<span class="tok-string">"uuid-2"</span>] == <span class="tok-string">"low_stock"</span>
+    <span class="tok-kw">assert</span> statuses[<span class="tok-string">"uuid-3"</span>] == <span class="tok-string">"in_stock"</span></code></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PRODUCTION CHECKLIST
+    ═══════════════════════════════════════════════════════════════════════════ -->
+    <section id="prod-checklist">
+      <h2>Production Checklist</h2>
+
+      <h3>🔐 Security</h3>
+      <ul class="checklist">
+        <li><strong>SECRET_KEY</strong> is a cryptographically random 32-byte hex (generated with <code>openssl rand -hex 32</code>)</li>
+        <li><strong>MCP_INTERNAL_API_KEY</strong> is a 32-byte hex string generated with <code>secrets.token_hex(32)</code></li>
+        <li>MCP servers are NOT exposed on public ports — internal Docker network only</li>
+        <li>Payment keys (<code>RAZORPAY_KEY_SECRET</code>) stored in Docker secrets or a secrets manager, not env vars</li>
+        <li><code>ANTHROPIC_API_KEY</code> has usage limits set in the Anthropic console</li>
+        <li><code>DEBUG=false</code> in production (disables FastAPI debug mode and traceback exposure)</li>
+        <li><code>TrustedHostMiddleware</code> enabled with explicit <code>allowed_hosts=[...]</code></li>
+        <li>HTTPS configured via reverse proxy (Nginx/Caddy) with valid TLS certificate</li>
+        <li>Refresh token cookie has <code>Secure</code> flag (requires HTTPS)</li>
+      </ul>
+
+      <h3>⚡ Reliability</h3>
+      <ul class="checklist">
+        <li>Each MCP server has a <code>HEALTHCHECK</code> in its Dockerfile</li>
+        <li>FastAPI endpoints catch <code>MCPToolError</code> and return HTTP 502 with user-friendly message</li>
+        <li>MCP clients have <code>timeout=30.0</code> set (prevents hanging requests)</li>
+        <li>Retry logic added to <code>MCPClient.call_tool()</code> for transient network errors</li>
+        <li>Database connection pool sized correctly: <code>(2 × CPU_cores) + 1</code> workers</li>
+        <li>Alembic migrations tested in staging before production apply</li>
+      </ul>
+
+      <h3>📈 Performance</h3>
+      <ul class="checklist">
+        <li>mcp-search uses a connection pool (not a new asyncpg connection per request)</li>
+        <li>Product embeddings are pre-generated at write time, not at search time</li>
+        <li>pgvector IVFFlat index created: <code>CREATE INDEX ON products USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)</code></li>
+        <li>mcp-analytics queries have indexes on <code>orders.created_at</code> and <code>orders.status</code></li>
+        <li>Nginx gzip enabled for all text/JS/CSS assets</li>
+        <li>Vite static assets with content-hashed filenames cached with <code>max-age=1y, immutable</code></li>
+        <li>Uvicorn workers set to <code>(2 × CPU_cores) + 1</code></li>
+      </ul>
+
+      <h3>🔍 Observability</h3>
+      <ul class="checklist">
+        <li>Structured logging (JSON format) added to each MCP server for log aggregation</li>
+        <li>OpenTelemetry traces span both FastAPI → MCPClient → MCP server calls</li>
+        <li>Alerts configured for MCP server health check failures</li>
+        <li>Database slow query logging enabled (<code>log_min_duration_statement = 500</code>)</li>
+      </ul>
+    </section>
+
+    <section id="prod-observability">
+      <h2>Observability &amp; Logging</h2>
+      <h3>Structured Log Format (JSON)</h3>
+      <pre><code><span class="tok-comment"># Add to each MCP server's server.py:</span>
+<span class="tok-kw">import</span> logging, json, datetime
+
+<span class="tok-kw">class</span> <span class="tok-type">JSONFormatter</span>(logging.Formatter):
+    <span class="tok-kw">def</span> <span class="tok-fn">format</span>(self, record):
+        <span class="tok-kw">return</span> json.dumps({
+            <span class="tok-string">"ts"</span>: datetime.datetime.utcnow().isoformat(),
+            <span class="tok-string">"level"</span>: record.levelname,
+            <span class="tok-string">"msg"</span>: record.getMessage(),
+            <span class="tok-string">"logger"</span>: record.name,
+        })
+
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logging.root.addHandler(handler)
+logging.root.setLevel(logging.INFO)</code></pre>
+
+      <h3>Health Check Endpoints</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Service</th><th>Health URL</th><th>Expected Response</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">FastAPI backend</td><td>http://localhost:8000/health</td><td><code>{"status": "ok"}</code></td></tr>
+            <tr><td class="td-name">Frontend (Nginx)</td><td>http://localhost:3000/health</td><td><code>ok</code></td></tr>
+            <tr><td class="td-name">PostgreSQL</td><td><code>pg_isready -U shopwave -d shopwave_db</code></td><td>exit code 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-ok">
+        <span class="callout-label">Ready for review</span>
+        <p>This document is the complete technical reference for the ShopWave platform. Keep it updated when adding new MCP tools, API endpoints, or changing the database schema. Maintain the "Foundation-First" documentation strategy.</p>
+      </div>
+    </section>
+
+    <hr/>
+    <p style="text-align:center; font-size:12px; color: var(--text-light);">
+      ShopWave Technical Reference · Generated April 2026 · <a href="#intro">Back to top ↑</a>
+    </p>
+
+  </main>
+</div>
+
+<script>
+  /* Active sidebar link based on scroll position */
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.sidebar a');
+
+  function onScroll() {
+    let current = '';
+    sections.forEach(s => {
+      const top = s.getBoundingClientRect().top;
+      if (top <= 80) current = s.id;
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+
+</body>
+</html>

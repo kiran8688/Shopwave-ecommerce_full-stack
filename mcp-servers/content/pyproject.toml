@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-content"
+version = "1.0.0"
+requires-python = ">=3.14"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "asyncpg>=0.30.0",
+    "pydantic>=2.10.0",
+    "httpx>=0.28.0",
+]

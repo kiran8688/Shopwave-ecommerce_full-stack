@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopWave Deployment & CI/CD Architecture</title>
+    <style>
+        :root {
+            /* Premium Dark Theme */
+            --bg-color: #0b0f19;
+            --text-color: #f1f5f9;
+            --accent-color: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --glass-blur: blur(16px);
+            --success-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.8s forwards;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 
+                        0 0 0 1px rgba(59, 130, 246, 0.3);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        p {
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin: 4rem 0 2rem;
+            color: #fff;
+        }
+
+        .pipeline-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 3rem;
+            backdrop-filter: var(--glass-blur);
+            margin-bottom: 4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease;
+        }
+
+        .pipeline-step:hover {
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .step-content h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .step-content p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--success-color);
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 10px var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .pipeline-step { flex-direction: column; text-align: center; gap: 1rem; }
+            .pipeline-container { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Architecture & Deployment</h1>
+        <p class="subtitle">A premium, resilient, and scalable deployment strategy for the ShopWave e-commerce platform.</p>
+    </header>
+
+    <main>
+        <h2 class="section-title">Infrastructure Stack</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">▼</div>
+                <span class="badge">Frontend Ecosystem</span>
+                <h2>Vercel</h2>
+                <p>Hosts the Next.js storefront via Edge Network. Delivers highly cached, instant responses using Edge Functions with zero-config CI integrations.</p>
+            </div>
+            
+            <div class="card">
+                <div class="icon">🚆</div>
+                <span class="badge">Backend Infrastructure</span>
+                <h2>Railway</h2>
+                <p>Orchestrates the ShopWave FastAPI backend and MCP server clusters. Automatically scales python containers based on load with seamless Nixpacks builds.</p>
+            </div>
+
+            <div class="card">
+                <div class="icon">🐘</div>
+                <span class="badge">Data Layer</span>
+                <h2>Neon Serverless Postgres</h2>
+                <p>Provides fully managed, serverless PostgreSQL with pgvector for semantic search. Features instant database branching for preview environments.</p>
+            </div>
+
+            <div class="card">
+                <div class="icon">⚡</div>
+                <span class="badge">CI/CD Pipeline</span>
+                <h2>GitHub Actions</h2>
+                <p>Automates testing, linting, and Docker builds. Secures secrets, runs Pytest suites, and safely triggers rolling deployments on merge.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">Continuous Integration & Deployment</h2>
+        <div class="pipeline-container">
+            <div class="pipeline-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Commit & Push</h3>
+                    <p>Developers push code to the <code>main</code> branch or open a Pull Request. GitHub Actions is immediately triggered contextually.</p>
+                </div>
+            </div>
+            
+            <div class="pipeline-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Provision ephemeral environments</h3>
+                    <p>Neon forks a preview branch of the database. Vercel spins up a preview deployment of the frontend pointing to the preview DB.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Lints & Test Execution</h3>
+                    <p>Ruff analyzes Python syntax. Pytest runs unit and integration tests against the isolated preview database.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Production Rollout</h3>
+                    <p><span class="status-dot"></span>Upon passing all checks, Railway pulls the updated container registry, rolling out the backend containers. Vercel promotes the build to production.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

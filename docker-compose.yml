@@ -1,0 +1,91 @@
+# docker-compose.yml
+# Three-service stack: db (PostgreSQL 18) → backend (FastAPI) → frontend (React+Nginx)
+
+services:
+
+  # ── PostgreSQL 18 ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:18-alpine
+    container_name: shopwave_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shopwave
+      POSTGRES_PASSWORD: shopwave_pass
+      POSTGRES_DB: shopwave_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_v18:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopwave -d shopwave_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - shopwave_net
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: shopwave_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://shopwave:shopwave_pass@db:5432/shopwave_db
+      SECRET_KEY: ${SECRET_KEY:-CHANGE_ME_IN_PRODUCTION_ENV}
+      DEBUG: ${DEBUG:-false}
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001","http://localhost:80"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - shopwave_net
+
+  # ── React Frontend ────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    container_name: shopwave_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - shopwave_net
+
+volumes:
+  postgres_data_v18:
+    driver: local
+
+networks:
+  shopwave_net:
+    driver: bridge

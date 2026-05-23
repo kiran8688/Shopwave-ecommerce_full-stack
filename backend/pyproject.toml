@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ecommerce-backend"
+version = "1.0.0"
+description = "Full-Stack E-Commerce Backend — FastAPI + PostgreSQL 18"
+requires-python = ">=3.11"
+
+dependencies = [
+    # ── Web Framework ────────────────────────────────────────────────────────
+    "fastapi>=0.115.0",          # ASGI web framework; lifespan events & dependency injection
+    "uvicorn[standard]>=0.32.0", # ASGI server with websocket & reload support
+
+    # ── Database ─────────────────────────────────────────────────────────────
+    "sqlalchemy>=2.0.36",        # ORM with async support; 2.x API required for PG18 features
+    "alembic>=1.14.0",           # Schema migration tool — version-controlled DB changes
+    "asyncpg>=0.30.0",           # Async PostgreSQL driver used by SQLAlchemy async engine
+    "psycopg[binary]>=3.2.3",    # Sync PG driver for Alembic env.py (sync context required)
+
+    # ── Authentication & Security ─────────────────────────────────────────────
+    "pwdlib[argon2]>=0.2.1",     # Password hashing; argon2 extra installs the argon2-cffi backend
+    "pyjwt[crypto]>=2.10.0",     # JWT encoding/decoding; crypto extra adds RSA/EC support
+    "python-multipart>=0.0.18",  # Required for OAuth2 form-data (username/password login flow)
+
+    # ── Validation & Settings ─────────────────────────────────────────────────
+    "pydantic>=2.10.0",          # Data validation powering FastAPI request/response schemas
+    "pydantic-settings>=2.6.0",  # Reads .env files into strongly-typed Settings class
+    "email-validator>=2.2.0",    # Validates EmailStr fields in Pydantic schemas
+
+    # ── Utilities ─────────────────────────────────────────────────────────────
+    "python-slugify>=8.0.4",     # Generates URL-friendly slugs from product/category names
+    "Pillow>=11.0.0",            # Image processing for product thumbnail generation
+    "httpx>=0.28.0",             # Async HTTP client; used for MCP server communication
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",             # Also used in test client (TestClient wraps HTTPX)
+    "ruff>=0.8.0",               # Fast linter + formatter replacing flake8/black/isort
+    "mypy>=1.13.0",              # Static type checker — catches type errors before runtime
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]  # pycodestyle, pyflakes, isort, pyupgrade
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"            # All async test functions run without @pytest.mark.asyncio
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+

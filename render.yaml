@@ -1,0 +1,58 @@
+# render.yaml — Blueprint for Render.com deployment
+# ─────────────────────────────────────────────────────────────────────────────
+# This file automates the creation of the database, backend, and frontend
+# services on Render using the latest possible versions.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL Database (v18) ───────────────────────────────────────────────
+  - type: database
+    name: shopwave-db
+    plan: free
+    region: singapore
+    ipAllowList: []
+    postgresMajorVersion: 18           # Using requested latest version
+
+  # ── FastAPI Backend (Python 3.14) ──────────────────────────────────────────
+  - type: web
+    name: shopwave-backend
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shopwave-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.14.0                  # Using requested latest version
+      - key: DEBUG
+        value: "false"
+      - key: BACKEND_CORS_ORIGINS
+        fromService:
+          type: web
+          name: shopwave-frontend
+          property: host
+
+  # ── React Frontend (SPA) ───────────────────────────────────────────────────
+  - type: web
+    name: shopwave-frontend
+    env: static
+    region: singapore
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: "./frontend/dist"
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: shopwave-backend
+          property: host
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"

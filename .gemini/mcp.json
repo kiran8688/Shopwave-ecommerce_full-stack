@@ -1,0 +1,66 @@
+{
+  "mcpServers": {
+    "shopwave-inventory": {
+      "command": "python",
+      "args": [
+        "mcp-servers/inventory/server.py"
+      ],
+      "env": {}
+    },
+    "shopwave-payments": {
+      "command": "python",
+      "args": [
+        "mcp-servers/payments/server.py"
+      ],
+      "env": {
+        "RAZORPAY_KEY_ID": "YOUR_RAZORPAY_KEY_ID",
+        "RAZORPAY_KEY_SECRET": "YOUR_RAZORPAY_KEY_SECRET"
+      }
+    },
+    "shopwave-search": {
+      "command": "python",
+      "args": [
+        "mcp-servers/search/server.py"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/shopwave",
+        "VOYAGE_API_KEY": "YOUR_VOYAGE_API_KEY"
+      }
+    },
+    "shopwave-analytics": {
+      "command": "python",
+      "args": [
+        "mcp-servers/analytics/server.py"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/shopwave"
+      }
+    },
+    "shopwave-content": {
+      "command": "python",
+      "args": [
+        "mcp-servers/content/server.py"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY"
+      }
+    },
+    "shopwave-notifications": {
+      "command": "python",
+      "args": [
+        "mcp-servers/notifications/server.py"
+      ],
+      "env": {
+        "SENDGRID_API_KEY": "YOUR_SENDGRID_API_KEY",
+        "FROM_EMAIL": "noreply@shopwave.com"
+      }
+    },
+    "shopwave-custom-player": {
+      "command": "python",
+      "args": [
+        "mcp-servers/custom_player/server.py"
+      ],
+      "env": {}
+    }
+  }
+}

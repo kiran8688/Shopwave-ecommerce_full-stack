@@ -31,6 +31,17 @@ class Settings(BaseSettings):
     # Full async DSN e.g.: postgresql+asyncpg://user:pass@db:5432/ecommerce
     DATABASE_URL: str                        # Set in docker-compose via environment block
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str | None) -> str | None:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            if v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
+
     # ── CORS — allowed origins for the React frontend ────────────────────────
     BACKEND_CORS_ORIGINS: str | list[AnyHttpUrl] = []
 

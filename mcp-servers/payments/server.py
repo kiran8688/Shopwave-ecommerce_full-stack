@@ -10,7 +10,7 @@ import hashlib
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-payments", description="Payment gateway abstraction layer")
+mcp = FastMCP(name="shopwave-payments", dependencies=["asyncpg"])
 
 # Razorpay credentials from environment — never hardcoded
 RAZORPAY_KEY_ID     = os.environ.get("RAZORPAY_KEY_ID", "")

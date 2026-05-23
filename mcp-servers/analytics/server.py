@@ -9,7 +9,7 @@ import asyncpg
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-analytics", description="Sales and inventory business intelligence")
+mcp = FastMCP(name="shopwave-analytics", dependencies=["asyncpg"])
 DB_URL = os.environ.get("DATABASE_URL", "")
 
 

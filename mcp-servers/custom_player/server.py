@@ -9,7 +9,7 @@ import os
 from typing import Any, Dict
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-custom-player", description="Control interface for custom media/video player")
+mcp = FastMCP(name="shopwave-custom-player", dependencies=["asyncpg"])
 
 # In-memory mock state for the player
 _player_state = {

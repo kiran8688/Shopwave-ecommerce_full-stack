@@ -10,7 +10,7 @@ import httpx
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-search", description="Semantic product search via pgvector")
+mcp = FastMCP(name="shopwave-search", dependencies=["asyncpg"])
 
 DB_URL          = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")

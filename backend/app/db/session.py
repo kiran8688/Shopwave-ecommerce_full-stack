@@ -20,16 +20,18 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import settings
 
-# ── Engine ────────────────────────────────────────────────────────────────────
-# create_async_engine is the async equivalent of create_engine.
-# pool_pre_ping=True sends a lightweight "SELECT 1" before handing out a
-# connection — prevents stale-connection errors after Docker restarts.
+# Enable SSL for remote databases (e.g., hosted on Render or AWS)
+connect_args = {}
+if "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL:
+    connect_args["ssl"] = True
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,         # Log all SQL to stdout when DEBUG=True — disable in production
     pool_size=10,                # Connections held open in the pool (tune to DB max_connections)
     max_overflow=20,             # Extra connections allowed beyond pool_size under peak load
     pool_pre_ping=True,          # Health-check connections before use
+    connect_args=connect_args,
 )
 
 # ── Session factory ───────────────────────────────────────────────────────────

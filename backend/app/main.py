@@ -54,6 +54,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origin_regex=r"https://.*\.onrender\.com|http://localhost(:\d+)?|http://127\.0.0\.1(:\d+)?",
     allow_credentials=True,    # Required for cookies (HttpOnly refresh token)
     allow_methods=["*"],       # Allow all HTTP methods
     allow_headers=["*"],       # Allow all headers including Authorization

@@ -36,9 +36,18 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: str | None) -> str | None:
         if isinstance(v, str):
             if v.startswith("postgres://"):
-                return v.replace("postgres://", "postgresql+asyncpg://", 1)
-            if v.startswith("postgresql://"):
-                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+                v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://"):
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+            # Clean up sslmode from the query string to prevent asyncpg TypeError
+            if "?" in v:
+                base, query = v.split("?", 1)
+                params = [p for p in query.split("&") if not p.startswith("sslmode=")]
+                if params:
+                    v = f"{base}?{'&'.join(params)}"
+                else:
+                    v = base
         return v
 
 

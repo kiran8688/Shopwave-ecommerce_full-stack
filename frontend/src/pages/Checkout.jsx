@@ -15,9 +15,18 @@ export default function Checkout() {
     shipping_name: '', shipping_address_line1: '', shipping_address_line2: '',
     shipping_city: '', shipping_state: '', shipping_postal_code: '', shipping_country: 'IN',
   })
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true)
+  const [billingForm, setBillingForm] = useState({
+    billing_name: '', billing_address_line1: '', billing_address_line2: '',
+    billing_city: '', billing_state: '', billing_postal_code: '', billing_country: 'IN',
+  })
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  }
+
+  function handleBillingChange(e) {
+    setBillingForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
 
   async function handleCreateOrder(e) {
@@ -65,7 +74,43 @@ export default function Checkout() {
                 />
               </div>
             ))}
+            
+            <label className="flex items-center gap-2 mt-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={billingSameAsShipping}
+                onChange={e => setBillingSameAsShipping(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-gray-700 font-medium">Billing address matches shipping</span>
+            </label>
           </div>
+
+          {!billingSameAsShipping && (
+            <div className="card space-y-4 border-t-2 border-primary animate-slide-down">
+              <h2 className="font-semibold text-gray-900">Billing Address</h2>
+              {[
+                { name: 'billing_name', label: 'Full Name', placeholder: 'Jane Doe' },
+                { name: 'billing_address_line1', label: 'Address Line 1', placeholder: '123 Main St' },
+                { name: 'billing_address_line2', label: 'Address Line 2 (optional)', placeholder: 'Apt 4B' },
+                { name: 'billing_city', label: 'City', placeholder: 'Hyderabad' },
+                { name: 'billing_state', label: 'State', placeholder: 'Telangana' },
+                { name: 'billing_postal_code', label: 'Postal Code', placeholder: '500001' },
+              ].map(({ name, label, placeholder }) => (
+                <div key={name}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <input
+                    name={name}
+                    value={billingForm[name]}
+                    onChange={handleBillingChange}
+                    placeholder={placeholder}
+                    required={!name.includes('line2')}
+                    className="input"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Order summary */}
           <div className="card space-y-3">

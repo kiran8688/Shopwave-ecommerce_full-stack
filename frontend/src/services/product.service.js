@@ -22,6 +22,15 @@ export const productService = {
     return data
   },
 
+  async createCategory(categoryData) {
+    const { data } = await api.post('/api/v1/categories/', categoryData)
+    return data
+  },
+
+  async deleteCategory(categoryId) {
+    await api.delete(`/api/v1/categories/${categoryId}`)
+  },
+
   async createProduct(productData) {
     const { data } = await api.post('/api/v1/products/', productData)
     return data

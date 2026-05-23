@@ -6,13 +6,14 @@ import { productService } from '@/services/product.service'
 import { useCartStore } from '@/store/cartStore'
 import { useSemanticSearch } from '@/hooks/useSemanticSearch'
 import toast from 'react-hot-toast'
-import { ShoppingCart, Filter, Sparkles } from 'lucide-react'
+import { ShoppingCart, Filter, Sparkles, X } from 'lucide-react'
 
 export default function Products() {
   const [searchParams] = useSearchParams()
   const searchQuery = searchParams.get('search') ?? ''
   const [categoryId, setCategoryId] = useState(null)
   const [aiSearchActive, setAiSearchActive] = useState(false)
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
 
   const { addItem } = useCartStore()
 
@@ -92,6 +93,56 @@ export default function Products() {
 
       {/* Product grid */}
       <div className="flex-1">
+        {/* Mobile Category Toggle Button */}
+        <div className="md:hidden mb-4">
+          <button
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="btn-secondary w-full py-2 flex items-center justify-center gap-2 border border-gray-200 text-sm font-semibold rounded-xl"
+          >
+            <Filter className="h-4 w-4 text-gray-500" />
+            Filter Categories
+          </button>
+        </div>
+
+        {/* Mobile categories filter drawer overlay */}
+        {isMobileFilterOpen && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setIsMobileFilterOpen(false)}>
+            <div 
+              className="w-64 bg-white h-full p-6 shadow-xl flex flex-col relative animate-slide-in"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              <div className="flex items-center gap-2 mb-6 mt-2">
+                <Filter className="h-5 w-5 text-gray-700" />
+                <h3 className="font-bold text-gray-900 text-lg">Categories</h3>
+              </div>
+              
+              <ul className="space-y-2 overflow-y-auto flex-1">
+                <li>
+                  <button
+                    onClick={() => { setCategoryId(null); setIsMobileFilterOpen(false) }}
+                    className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors font-medium ${!categoryId ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >All Products</button>
+                </li>
+                {(categories ?? []).map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => { setCategoryId(cat.id); setIsMobileFilterOpen(false) }}
+                      className={`w-full text-left text-sm px-3 py-2 rounded-lg transition-colors font-medium ${categoryId === cat.id ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >{cat.name}</button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             {searchQuery && (

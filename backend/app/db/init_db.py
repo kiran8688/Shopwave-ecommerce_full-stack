@@ -55,7 +55,7 @@ async def init_db(db: AsyncSession) -> None:
         if not verify_password(settings.FIRST_ADMIN_PASSWORD, user.hashed_password):
             user.hashed_password = hash_password(settings.FIRST_ADMIN_PASSWORD)
             updated = True
-            
+
         if updated:
             try:
                 await db.commit()

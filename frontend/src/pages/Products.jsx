@@ -107,7 +107,7 @@ export default function Products() {
         {/* Mobile categories filter drawer overlay */}
         {isMobileFilterOpen && (
           <div className="fixed inset-0 bg-black/40 z-50 flex justify-end" onClick={() => setIsMobileFilterOpen(false)}>
-            <div 
+            <div
               className="w-64 bg-white h-full p-6 shadow-xl flex flex-col relative animate-slide-in"
               onClick={e => e.stopPropagation()}
             >
@@ -117,12 +117,12 @@ export default function Products() {
               >
                 <X className="h-5 w-5" />
               </button>
-              
+
               <div className="flex items-center gap-2 mb-6 mt-2">
                 <Filter className="h-5 w-5 text-gray-700" />
                 <h3 className="font-bold text-gray-900 text-lg">Categories</h3>
               </div>
-              
+
               <ul className="space-y-2 overflow-y-auto flex-1">
                 <li>
                   <button
@@ -158,13 +158,13 @@ export default function Products() {
               onClick={() => {
                 setAiSearchActive(a => !a)
                 toast.success(
-                  !aiSearchActive 
+                  !aiSearchActive
                     ? 'AI Semantic Search activated! Matching query concepts.'
                     : 'Switched back to standard keyword search.'
                 )
               }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                aiSearchActive 
+                aiSearchActive
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md hover:from-violet-700 hover:to-indigo-700 scale-105'
                   : 'bg-white text-violet-600 border border-violet-200 hover:bg-violet-50'
               }`}
@@ -208,7 +208,7 @@ export default function Products() {
                     ? <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     : <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
                   }
-                  
+
                   {/* Premium AI Relevance Score Badge */}
                   {isAIScored && product.aiScore && (
                     <span className="absolute top-2 right-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-[10px] px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 z-10">

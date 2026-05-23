@@ -39,7 +39,7 @@ class Settings(BaseSettings):
                 v = v.replace("postgres://", "postgresql+asyncpg://", 1)
             elif v.startswith("postgresql://"):
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-            
+
             # Clean up sslmode from the query string to prevent asyncpg TypeError
             if "?" in v:
                 base, query = v.split("?", 1)

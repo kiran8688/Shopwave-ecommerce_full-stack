@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
-  
+
   // Category CRUD states
   const [isCatFormOpen, setIsCatFormOpen] = useState(false)
   const [catForm, setCatForm] = useState({ name: '', slug: '', description: '', image_url: '' })
@@ -121,14 +121,14 @@ export default function AdminDashboard() {
           <p className="text-gray-500">Manage your products, categories and inventory forecasts.</p>
         </div>
         {activeTab === 'products' ? (
-          <button 
+          <button
             onClick={openAddForm}
             className="btn-primary inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" /> Add New Product
           </button>
         ) : (
-          <button 
+          <button
             onClick={() => setIsCatFormOpen(true)}
             className="btn-primary inline-flex items-center gap-2"
           >
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input 
+              <input
                 type="text"
                 placeholder="Search within catalogue..."
                 className="input pl-10"
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
                             }`}>
                               {product.stock_quantity} in stock
                             </span>
-                            
+
                             {/* AI Stock warnings suggester trigger */}
                             {product.stock_quantity <= 10 && (
                               <button
@@ -234,14 +234,14 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <button 
+                            <button
                               onClick={() => handleEdit(product)}
                               className="p-1.5 text-gray-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDelete(product.id)}
                               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete"
@@ -305,7 +305,7 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-600 font-mono">{cat.slug}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{cat.description || 'No description.'}</td>
                         <td className="px-6 py-4 text-right">
-                          <button 
+                          <button
                             onClick={() => {
                               if (window.confirm('Are you sure you want to delete this category?')) {
                                 deleteCatMutation.mutate(cat.id)
@@ -337,24 +337,24 @@ export default function AdminDashboard() {
       {activeSuggestion && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative animate-slide-up">
-            <button 
+            <button
               onClick={() => setActiveSuggestion(null)}
               className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 text-gray-400"
             >
               <X className="h-5 w-5" />
             </button>
-            
+
             <div className="flex items-center gap-2 mb-4 text-violet-600 bg-violet-50 p-3 rounded-xl">
               <Sparkles className="h-5 w-5" />
               <h3 className="font-bold text-violet-900 text-sm">AI Stock Replenishment Forecast</h3>
             </div>
-            
+
             <div className="space-y-3 text-sm text-gray-600">
               <p><strong className="text-gray-900">Product:</strong> {activeSuggestion.productName}</p>
               <p><strong className="text-gray-900">SKU:</strong> <span className="font-mono">{activeSuggestion.sku}</span></p>
               <p><strong className="text-gray-900">Current Stock:</strong> {activeSuggestion.stock} units</p>
               <hr className="my-2 border-gray-100" />
-              
+
               {activeSuggestion.status === 'mocked' ? (
                 <div className="bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 p-3 rounded-xl space-y-2">
                   <p className="text-xs text-violet-700 font-semibold flex items-center gap-1">
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={() => setActiveSuggestion(null)}
               className="btn-primary w-full mt-5 py-2"
@@ -391,74 +391,74 @@ export default function AdminDashboard() {
       {isCatFormOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <form onSubmit={handleAddCategory} className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative animate-slide-up space-y-4">
-            <button 
+            <button
               type="button"
               onClick={() => setIsCatFormOpen(false)}
               className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 text-gray-400"
             >
               <X className="h-5 w-5" />
             </button>
-            
+
             <div className="border-b pb-3">
               <h3 className="font-bold text-gray-900 text-lg">Add New Category</h3>
             </div>
-            
+
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Category Name *</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  placeholder="e.g. Smart Devices" 
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g. Smart Devices"
                   required
                   value={catForm.name}
                   onChange={e => setCatForm(c => ({ ...c, name: e.target.value }))}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Slug *</label>
-                <input 
-                  type="text" 
-                  className="input font-mono" 
-                  placeholder="e.g. smart-devices" 
+                <input
+                  type="text"
+                  className="input font-mono"
+                  placeholder="e.g. smart-devices"
                   required
                   value={catForm.slug}
                   onChange={e => setCatForm(c => ({ ...c, slug: e.target.value.toLowerCase().replace(/ /g, '-') }))}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
-                <textarea 
-                  className="input h-20 resize-none" 
+                <textarea
+                  className="input h-20 resize-none"
                   placeholder="Brief explanation of items in category..."
                   value={catForm.description}
                   onChange={e => setCatForm(c => ({ ...c, description: e.target.value }))}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Image URL</label>
-                <input 
-                  type="text" 
-                  className="input" 
+                <input
+                  type="text"
+                  className="input"
                   placeholder="https://..."
                   value={catForm.image_url}
                   onChange={e => setCatForm(c => ({ ...c, image_url: e.target.value }))}
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-3 pt-3 border-t">
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsCatFormOpen(false)}
                 className="btn-secondary flex-1 text-sm py-2"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={isCatSubmitting}
                 className="btn-primary flex-1 text-sm py-2"

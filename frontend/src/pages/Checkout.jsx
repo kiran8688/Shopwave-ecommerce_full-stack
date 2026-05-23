@@ -74,7 +74,7 @@ export default function Checkout() {
                 />
               </div>
             ))}
-            
+
             <label className="flex items-center gap-2 mt-4 cursor-pointer">
               <input
                 type="checkbox"

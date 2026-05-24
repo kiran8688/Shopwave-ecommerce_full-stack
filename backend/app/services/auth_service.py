@@ -3,8 +3,9 @@
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import hash_password, needs_rehash, verify_password
 from app.models.user import User
-from app.core.security import verify_password, hash_password, needs_rehash
 
 
 async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:

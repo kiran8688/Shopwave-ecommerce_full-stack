@@ -12,14 +12,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.mcp import notify_mcp, analytics_mcp
-
+from app.core.mcp import analytics_mcp, notify_mcp
 from app.core.security import (
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
     hash_password,
-    verify_password,
 )
 from app.db.session import get_db
 from app.models.user import User

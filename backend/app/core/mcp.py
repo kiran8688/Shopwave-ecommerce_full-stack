@@ -16,12 +16,22 @@ MOCK_MCP = os.getenv("MOCK_MCP", "true").lower() in ("true", "1", "yes")
 if not MOCK_MCP:
     # Import the real HTTP clients connected to the Docker internal network
     from app.utils.mcp_client import (
-        inventory_mcp as real_inventory_mcp,
-        payments_mcp as real_payments_mcp,
-        search_mcp as real_search_mcp,
-        notify_mcp as real_notify_mcp,
         analytics_mcp as real_analytics_mcp,
+    )
+    from app.utils.mcp_client import (
         content_mcp as real_content_mcp,
+    )
+    from app.utils.mcp_client import (
+        inventory_mcp as real_inventory_mcp,
+    )
+    from app.utils.mcp_client import (
+        notify_mcp as real_notify_mcp,
+    )
+    from app.utils.mcp_client import (
+        payments_mcp as real_payments_mcp,
+    )
+    from app.utils.mcp_client import (
+        search_mcp as real_search_mcp,
     )
 
     class MCPClientAdapter:

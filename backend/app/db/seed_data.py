@@ -1,12 +1,14 @@
 # app/db/seed_data.py
 import uuid
 from decimal import Decimal
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
 from app.models.product import Product
+
 
 async def seed_data(db: AsyncSession) -> None:
     """Populate the database with dummy data for categories and products."""

@@ -1,5 +1,6 @@
 # app/api/v1/endpoints/categories.py
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

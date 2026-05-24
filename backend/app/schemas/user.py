@@ -1,6 +1,7 @@
 # app/schemas/user.py
 import uuid
 from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field
 
 

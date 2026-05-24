@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import hash_password, verify_password
-from app.models.user import User
 from app.db.seed_data import seed_data
+from app.models.user import User
+
 
 async def init_db(db: AsyncSession) -> None:
     """

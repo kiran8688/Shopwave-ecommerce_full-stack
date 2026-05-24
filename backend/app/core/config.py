@@ -5,7 +5,7 @@
 # to an env-var of the same name (case-insensitive).
 # ─────────────────────────────────────────────────────────────────────────────
 
-from pydantic import AnyHttpUrl, PostgresDsn, field_validator
+from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

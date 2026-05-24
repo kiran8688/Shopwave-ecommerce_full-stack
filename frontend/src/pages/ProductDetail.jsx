@@ -8,7 +8,7 @@ import { ShoppingCart, Package } from 'lucide-react'
 import { useState } from 'react'
 
 export default function ProductDetail() {
-  const { slug: id } = useParams()   // We route by id for simplicity
+  const { id } = useParams()
   const [qty, setQty] = useState(1)
   const { addItem } = useCartStore()
 

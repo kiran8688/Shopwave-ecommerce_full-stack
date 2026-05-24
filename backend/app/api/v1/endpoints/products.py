@@ -2,16 +2,17 @@
 # Full CRUD for products — admin-only writes, public reads.
 
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_admin_user, get_current_active_user
+from app.core.dependencies import get_current_admin_user
+from app.core.mcp import inventory_mcp, search_mcp
 from app.db.session import get_db
 from app.models.product import Product
 from app.models.user import User
-from app.core.mcp import search_mcp, inventory_mcp
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
+from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 
 router = APIRouter()
 
@@ -39,6 +40,28 @@ async def list_products(
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
+
+
+@router.get("/search/semantic")
+async def semantic_search(
+    query: str = Query(..., description="Free-text semantic search query"),
+    limit: int = Query(20, ge=1, le=100),
+    category_id: UUID | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+):
+    """
+    Public endpoint — uses search_mcp to perform semantic search via pgvector embeddings.
+    """
+    results = await search_mcp.call_tool(
+        "semantic_search",
+        query=query,
+        limit=limit,
+        category_id=str(category_id) if category_id else None,
+        min_price=min_price,
+        max_price=max_price
+    )
+    return results
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
@@ -100,27 +123,6 @@ async def delete_product(
     await db.delete(product)
     await db.commit()
     return None
-
-@router.get("/search/semantic")
-async def semantic_search(
-    query: str = Query(..., description="Free-text semantic search query"),
-    limit: int = Query(20, ge=1, le=100),
-    category_id: UUID | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
-):
-    """
-    Public endpoint — uses search_mcp to perform semantic search via pgvector embeddings.
-    """
-    results = await search_mcp.call_tool(
-        "semantic_search",
-        query=query,
-        limit=limit,
-        category_id=str(category_id) if category_id else None,
-        min_price=min_price,
-        max_price=max_price
-    )
-    return results
 
 @router.get("/{product_id}/reorder-suggestion", dependencies=[Depends(get_current_admin_user)])
 async def get_reorder_suggestion(product_id: UUID):

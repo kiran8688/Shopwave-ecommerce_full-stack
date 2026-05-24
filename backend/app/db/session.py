@@ -10,18 +10,17 @@
 #   Sessions are injected via FastAPI's Depends() — see core/dependencies.py.
 # ─────────────────────────────────────────────────────────────────────────────
 
+import os
+import ssl
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
-    async_sessionmaker,     # SQLAlchemy 2.x replacement for sessionmaker() in async contexts
+    async_sessionmaker,  # SQLAlchemy 2.x replacement for sessionmaker() in async contexts
     create_async_engine,
 )
 
 from app.core.config import settings
-
-import os
-import ssl
 
 # Enable SSL for remote databases (e.g., hosted on Render or AWS)
 connect_args = {}
@@ -58,7 +57,7 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     """
     FastAPI dependency — yields one AsyncSession per request.
 

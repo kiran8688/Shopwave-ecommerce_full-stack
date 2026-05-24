@@ -75,7 +75,7 @@ async def suggest_reorder(product_id: str, lead_time_days: int = 7) -> dict[str,
         if not product:
             return {"error": "Product not found", "product_id": product_id}
 
-        # Average daily units sold over the last 30 days (excludes cancelled/refunded)
+        # Average daily units sold over the last 30 days (excludes unpaid/cancelled)
         velocity = await conn.fetchval(
             """
             SELECT COALESCE(SUM(oi.quantity), 0) / 30.0
@@ -83,7 +83,7 @@ async def suggest_reorder(product_id: str, lead_time_days: int = 7) -> dict[str,
             JOIN orders o ON oi.order_id = o.id
             WHERE oi.product_id = $1::uuid
               AND o.created_at > NOW() - INTERVAL '30 days'
-              AND o.status NOT IN ('cancelled', 'refunded')
+              AND o.payment_status = 'paid'
             """,
             product_id,
         )

@@ -1,19 +1,20 @@
 # app/api/v1/endpoints/orders.py
-from uuid import UUID
 from decimal import Decimal
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.schemas.order import OrderCreate
 
 from app.core.dependencies import get_current_active_user, get_current_admin_user
+from app.core.mcp import notify_mcp, payments_mcp
 from app.db.session import get_db
 from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.product import Product
 from app.models.user import User
-from app.core.mcp import payments_mcp, notify_mcp
+from app.schemas.order import OrderCreate
 
 router = APIRouter()
 
@@ -117,19 +118,26 @@ async def create_order(
     await db.commit()
     await db.refresh(order)
 
-    # MCP Integration: Send Order Confirmation
-    items_list = [
-        {"name": oi.product_name, "quantity": oi.quantity, "unit_price": str(oi.unit_price)}
-        for oi in order_items
-    ]
-    await notify_mcp.call_tool(
-        "send_order_confirmation",
-        user_email=current_user.email,
-        user_name=current_user.full_name,
-        order_id=str(order.id),
-        order_total=str(order.total_amount),
-        items=items_list
-    )
+    # MCP Integration: Send Order Confirmation (Non-blocking)
+    try:
+        items_list = [
+            {"name": oi.product_name, "quantity": oi.quantity, "unit_price": str(oi.unit_price)}
+            for oi in order_items
+        ]
+        await notify_mcp.call_tool(
+            "send_order_confirmation",
+            user_email=current_user.email,
+            user_name=current_user.full_name,
+            order_id=str(order.id),
+            order_total=str(order.total_amount),
+            items=items_list
+        )
+    except Exception as exc:
+        # Prevent external network/SendGrid failures from failing the checkout flow
+        import logging
+        logging.getLogger("uvicorn.error").warning(
+            f"Failed to send order confirmation email for order {order.id}: {exc}"
+        )
 
     return order
 
@@ -159,16 +167,22 @@ async def update_order_status(
     await db.commit()
     await db.refresh(order)
 
-    # MCP Integration: Send Shipping Update
+    # MCP Integration: Send Shipping Update (Non-blocking)
     if new_status == "shipped":
-        await notify_mcp.call_tool(
-            "send_shipping_update",
-            user_email=order.user.email if hasattr(order, "user") and order.user else "user@example.com",
-            user_name=order.user.full_name if hasattr(order, "user") and order.user else "Customer",
-            order_id=str(order.id),
-            tracking_number="SW-" + str(order.id)[:8].upper(),
-            carrier="FedEx"
-        )
+        try:
+            await notify_mcp.call_tool(
+                "send_shipping_update",
+                user_email=order.user.email if hasattr(order, "user") and order.user else "user@example.com",
+                user_name=order.user.full_name if hasattr(order, "user") and order.user else "Customer",
+                order_id=str(order.id),
+                tracking_number="SW-" + str(order.id)[:8].upper(),
+                carrier="FedEx"
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger("uvicorn.error").warning(
+                f"Failed to send shipping update email for order {order.id}: {exc}"
+            )
 
     return order
 

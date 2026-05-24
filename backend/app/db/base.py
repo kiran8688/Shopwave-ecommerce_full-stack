@@ -5,11 +5,8 @@
 # detect new tables without explicit registration.
 # ─────────────────────────────────────────────────────────────────────────────
 
-from sqlalchemy.orm import DeclarativeBase, MappedColumn, mapped_column
-from sqlalchemy import func, DateTime
-from datetime import datetime
-import uuid
-from sqlalchemy.dialects.postgresql import UUID
+
+from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
@@ -25,4 +22,4 @@ class Base(DeclarativeBase):
 # ── Import all models here so Alembic sees them ──────────────────────────────
 # Alembic's env.py imports Base.metadata; it can only detect models that have
 # already been imported into Python's module system.
-from app.models import user, product, category, order, order_item  # noqa: F401, E402
+from app.models import category, order, order_item, product, user  # noqa: F401, E402

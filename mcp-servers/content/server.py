@@ -9,7 +9,7 @@ import json
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-content", description="AI-generated product content via Claude")
+mcp = FastMCP(name="shopwave-content", dependencies=["asyncpg"])
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL      = "claude-sonnet-4-20250514"

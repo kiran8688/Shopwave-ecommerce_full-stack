@@ -9,7 +9,7 @@ import httpx
 from typing import Any
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP(name="shopwave-notifications", description="Transactional email delivery")
+mcp = FastMCP(name="shopwave-notifications", dependencies=["asyncpg"])
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 FROM_EMAIL       = os.environ.get("FROM_EMAIL", "noreply@shopwave.com")

@@ -11,7 +11,7 @@ from typing import Any
 
 mcp = FastMCP(
     name="shopwave-inventory",
-    description="Stock level monitoring and reorder intelligence",
+    dependencies=["asyncpg"],
 )
 
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://shopwave:shopwave_pass@db:5432/shopwave_db")

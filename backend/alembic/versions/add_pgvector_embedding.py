@@ -22,12 +22,12 @@ def upgrade() -> None:
     # 1. Enable the pgvector extension natively in PostgreSQL
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
-    # 2. Add the embedding column to products (standard type fallback, then cast to vector)
-    op.add_column('products', sa.Column('embedding', sa.NullType(), nullable=True))
-    op.execute("ALTER TABLE products ALTER COLUMN embedding TYPE vector(1024);")
+    # 2. Add the embedding column to products using raw SQL
+    op.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS embedding vector(1024);")
 
 
 def downgrade() -> None:
-    # Drop embedding column
-    op.drop_column('products', 'embedding')
+    # Drop embedding column using raw SQL
+    op.execute("ALTER TABLE products DROP COLUMN IF EXISTS embedding;")
     # Note: We do not drop the extension to avoid breaking other schemas
+

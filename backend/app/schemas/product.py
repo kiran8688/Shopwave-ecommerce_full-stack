@@ -42,3 +42,15 @@ class ProductResponse(ProductBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CopyPreviewRequest(BaseModel):
+    name: str
+    category: str | None = None
+    price: float | None = None
+    tone: str | None = "persuasive"
+
+
+class CopyGenerateRequest(BaseModel):
+    tone: str | None = "persuasive"
+

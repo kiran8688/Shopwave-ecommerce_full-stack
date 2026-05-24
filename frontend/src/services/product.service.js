@@ -44,4 +44,54 @@ export const productService = {
   async deleteProduct(productId) {
     await api.delete(`/api/v1/products/${productId}`)
   },
+
+  // AI Copywriting Generation
+  async generateCopyPreview({ name, category, price, tone }) {
+    const { data } = await api.post('/api/v1/products/generate-copy-preview', {
+      name,
+      category,
+      price,
+      tone,
+    })
+    return data
+  },
+
+  async generateCopyForProduct(productId, { tone }) {
+    const { data } = await api.post(`/api/v1/products/${productId}/generate-copy`, {
+      tone,
+    })
+    return data
+  },
+
+  // Admin Analytics
+  async getSalesSummary(dateFrom, dateTo) {
+    const params = new URLSearchParams()
+    if (dateFrom) params.append('date_from', dateFrom)
+    if (dateTo) params.append('date_to', dateTo)
+    const { data } = await api.get(`/api/v1/analytics/summary?${params}`)
+    return data
+  },
+
+  async getTopProducts(limit = 5, metric = 'revenue') {
+    const params = new URLSearchParams()
+    params.append('limit', limit)
+    params.append('metric', metric)
+    const { data } = await api.get(`/api/v1/analytics/top-products?${params}`)
+    return data
+  },
+
+  async getRevenueByDay(days = 7) {
+    const params = new URLSearchParams()
+    params.append('days', days)
+    const { data } = await api.get(`/api/v1/analytics/revenue?${params}`)
+    return data
+  },
+
+  async getLowStockReport(threshold = 10) {
+    const params = new URLSearchParams()
+    params.append('threshold', threshold)
+    const { data } = await api.get(`/api/v1/analytics/low-stock?${params}`)
+    return data
+  },
 }
+

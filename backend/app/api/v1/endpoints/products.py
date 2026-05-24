@@ -8,11 +8,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_admin_user
-from app.core.mcp import inventory_mcp, search_mcp
+from app.core.mcp import inventory_mcp, search_mcp, content_mcp
 from app.db.session import get_db
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
+from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate, CopyPreviewRequest, CopyGenerateRequest
 
 router = APIRouter()
 
@@ -135,3 +135,47 @@ async def get_reorder_suggestion(product_id: UUID):
         lead_time_days=7
     )
     return suggestion
+
+
+@router.post("/generate-copy-preview", dependencies=[Depends(get_current_admin_user)])
+async def generate_copy_preview(body: CopyPreviewRequest):
+    """
+    Admin-only endpoint — generates preview copywriting text for a given set of product details.
+    """
+    result = await content_mcp.call_tool(
+        "generate_product_description",
+        name=body.name,
+        category=body.category,
+        price=body.price,
+        tone=body.tone
+    )
+    return result
+
+
+@router.post("/{product_id}/generate-copy", dependencies=[Depends(get_current_admin_user)])
+async def generate_copy_for_product(
+    product_id: UUID,
+    body: CopyGenerateRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Admin-only endpoint — generates copywriting text for an existing product using database values.
+    """
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    category_str = "Product Category"
+    if product.category_id:
+        category_str = str(product.category_id)
+
+    result = await content_mcp.call_tool(
+        "generate_product_description",
+        name=product.name,
+        category=category_str,
+        price=float(product.price),
+        tone=body.tone
+    )
+    return result
+

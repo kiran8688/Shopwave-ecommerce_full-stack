@@ -205,6 +205,8 @@ async def create_payment_intent(
         amount_paise=amount_paise,
         currency="INR"
     )
+    order.payment_intent_id = intent.get("razorpay_order_id")
+    await db.commit()
     return intent
 
 @router.post("/{order_id}/verify-payment")

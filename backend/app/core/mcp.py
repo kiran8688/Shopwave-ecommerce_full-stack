@@ -52,6 +52,7 @@ if not MOCK_MCP:
     inventory_mcp = MCPClientAdapter(real_inventory_mcp)
     custom_player_mcp = MCPClientAdapter(real_content_mcp)
     analytics_mcp = MCPClientAdapter(real_analytics_mcp)
+    content_mcp = custom_player_mcp
 
 else:
     class MockMCPClient:
@@ -183,6 +184,108 @@ else:
                     "status": "success"
                 }
 
+            # 4. Content / Copywriting Client mock responses
+            if self.name == "shopwave-content" or tool_name in ("generate_product_description", "generate_meta_tags"):
+                name = kwargs.get("name") or kwargs.get("product_name") or "Premium Product"
+                category = kwargs.get("category") or "Electronics"
+                price = kwargs.get("price") or 4999.00
+                tone = kwargs.get("tone") or "persuasive"
+                
+                if tool_name == "generate_product_description":
+                    return {
+                        "description": f"Experience the ultimate in style and performance with the brand new {name}. Meticulously engineered for those who demand excellence, it features state-of-the-art craftsmanship and intuitive functionality. Perfect for {category} enthusiasts, this premium offering elevates your everyday routine with unmatched sophistication and reliability.",
+                        "bullet_points": [
+                            f"🔥 Premium Craftsmanship: Engineered with high-quality, durable materials designed to last.",
+                            f"🚀 Exceptional Performance: Delivers outstanding results seamlessly integrated into your lifestyle.",
+                            f"💡 Intelligent Design: Sleek, minimalist aesthetics combined with ergonomic comfort.",
+                            f"🌟 Unbeatable Value: Premium features at an accessible price point of INR {price}."
+                        ],
+                        "meta_title": f"Buy Premium {name} Online - Best Price on ShopWave",
+                        "meta_description": f"Shop the latest {name} in {category} at ShopWave. Enjoy premium quality, high-performance features, and exceptional value. Order now for fast shipping!",
+                        "status": "success"
+                    }
+                elif tool_name == "generate_meta_tags":
+                    return {
+                        "meta_title": f"Buy Premium {name} Online - Best Price on ShopWave",
+                        "meta_description": f"Shop the latest {name} in {category} at ShopWave. Enjoy premium quality, high-performance features, and exceptional value.",
+                        "keywords": [name.lower(), category.lower(), "shopwave", "premium", "buy online"],
+                        "status": "success"
+                    }
+
+            # 5. Analytics Client mock responses
+            if self.name == "shopwave-analytics" or tool_name in ("get_sales_summary", "get_top_products", "get_revenue_by_day", "get_low_stock_report"):
+                if tool_name == "get_sales_summary":
+                    return {
+                        "total_revenue": 542350.00,
+                        "total_orders": 128,
+                        "total_customers": 94,
+                        "average_order_value": 4237.11,
+                        "conversion_rate": 2.4,
+                        "status": "success"
+                    }
+                elif tool_name == "get_top_products":
+                    limit = kwargs.get("limit", 5)
+                    return [
+                        {
+                            "id": "e36e6d1e-bfba-4b82-9602-4b71239c0993",
+                            "name": "ShopWave Premium Wireless Headphones",
+                            "sales_count": 48,
+                            "revenue": 431952.00,
+                            "current_stock": 42
+                        },
+                        {
+                            "id": "a988d8b9-50e5-4d22-b430-c3d52d929944",
+                            "name": "Minimalist Leather Backpack",
+                            "sales_count": 22,
+                            "revenue": 99000.00,
+                            "current_stock": 18
+                        },
+                        {
+                            "id": "c72c8423-f38b-4b14-8f53-488f7b76e1a2",
+                            "name": "Mechanical Gaming Keyboard RGB",
+                            "sales_count": 15,
+                            "revenue": 48000.00,
+                            "current_stock": 25
+                        }
+                    ][:limit]
+                elif tool_name == "get_revenue_by_day":
+                    import datetime
+                    days = kwargs.get("days") or 7
+                    revenue_data = []
+                    base_date = datetime.date.today()
+                    for i in range(days):
+                        date_str = (base_date - datetime.timedelta(days=i)).isoformat()
+                        revenue = 15000.00 + (i * 1200) % 5000 + (3000 if i % 2 == 0 else 0)
+                        orders = 4 + (i * 2) % 6
+                        revenue_data.append({
+                            "date": date_str,
+                            "revenue": revenue,
+                            "orders_count": orders
+                        })
+                    revenue_data.reverse()
+                    return {
+                        "data": revenue_data,
+                        "days": days,
+                        "status": "success"
+                    }
+                elif tool_name == "get_low_stock_report":
+                    return [
+                        {
+                            "id": "a988d8b9-50e5-4d22-b430-c3d52d929944",
+                            "name": "Minimalist Leather Backpack",
+                            "sku": "SW-LBP-002",
+                            "stock_quantity": 4,
+                            "threshold": 10
+                        },
+                        {
+                            "id": "c72c8423-f38b-4b14-8f53-488f7b76e1a2",
+                            "name": "Mechanical Gaming Keyboard RGB",
+                            "sku": "SW-MKB-003",
+                            "stock_quantity": 8,
+                            "threshold": 10
+                        }
+                    ]
+
             return {"status": "mocked", "tool": tool_name, "args": kwargs}
 
     payments_mcp = MockMCPClient("shopwave-payments")
@@ -191,3 +294,4 @@ else:
     inventory_mcp = MockMCPClient("shopwave-inventory")
     custom_player_mcp = MockMCPClient("shopwave-custom-player")
     analytics_mcp = MockMCPClient("shopwave-analytics")
+    content_mcp = MockMCPClient("shopwave-content")

@@ -27,6 +27,44 @@ export default function ProductForm({ product, onClose }) {
     queryFn: productService.getCategories
   })
 
+  const [generatingCopy, setGeneratingCopy] = useState(false)
+
+  const handleAIGenerateCopy = async () => {
+    if (!formData.name) {
+      toast.error('Please enter a product name first')
+      return
+    }
+    setGeneratingCopy(true)
+    try {
+      const selectedCat = categories?.find(c => c.id === formData.category_id)
+      const categoryName = selectedCat ? selectedCat.name : ''
+      const res = await productService.generateCopyPreview({
+        name: formData.name,
+        category: categoryName,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        tone: 'persuasive'
+      })
+      if (res && res.description) {
+        let fullText = res.description
+        if (res.bullet_points && res.bullet_points.length > 0) {
+          fullText += '\n\nKey Features:\n' + res.bullet_points.join('\n')
+        }
+        setFormData(prev => ({
+          ...prev,
+          description: fullText
+        }))
+        toast.success('AI description generated!')
+      } else {
+        toast.error('Could not generate description')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('AI generation failed')
+    } finally {
+      setGeneratingCopy(false)
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: (data) => isEdit 
       ? productService.updateProduct(product.id, data) 
@@ -161,10 +199,20 @@ export default function ProductForm({ product, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700">Description</label>
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-semibold text-gray-700">Description</label>
+              <button
+                type="button"
+                onClick={handleAIGenerateCopy}
+                disabled={generatingCopy}
+                className="text-xs text-primary font-semibold inline-flex items-center gap-1 hover:text-primary-dark disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {generatingCopy ? '✨ Writing...' : '🔮 AI Write'}
+              </button>
+            </div>
             <textarea 
               name="description"
-              rows="3"
+              rows="5"
               value={formData.description}
               onChange={handleChange}
               className="input resize-none"

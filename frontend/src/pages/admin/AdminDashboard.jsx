@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productService } from '@/services/product.service'
-import { Plus, Pencil, Trash2, Package, Search, Sparkles, FolderKanban, AlertTriangle, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package, Search, Sparkles, FolderKanban, AlertTriangle, X, DollarSign, Users, ShoppingBag, BarChart3, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ProductForm from './ProductForm'
 import api from '@/services/api'
@@ -38,6 +38,30 @@ export default function AdminDashboard() {
   const { data: categories, isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: productService.getCategories,
+  })
+
+  const { data: salesSummary, isLoading: isSummaryLoading } = useQuery({
+    queryKey: ['salesSummary'],
+    queryFn: () => productService.getSalesSummary(),
+    enabled: activeTab === 'analytics'
+  })
+
+  const { data: topProducts, isLoading: isTopProductsLoading } = useQuery({
+    queryKey: ['topProducts'],
+    queryFn: () => productService.getTopProducts(5, 'revenue'),
+    enabled: activeTab === 'analytics'
+  })
+
+  const { data: revenueByDay, isLoading: isRevenueLoading } = useQuery({
+    queryKey: ['revenueByDay'],
+    queryFn: () => productService.getRevenueByDay(7),
+    enabled: activeTab === 'analytics'
+  })
+
+  const { data: lowStockReport, isLoading: isLowStockLoading } = useQuery({
+    queryKey: ['lowStockReport'],
+    queryFn: () => productService.getLowStockReport(10),
+    enabled: activeTab === 'analytics'
   })
 
   // Mutations
@@ -117,8 +141,8 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catalogue Management</h1>
-          <p className="text-gray-500">Manage your products, categories and inventory forecasts.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Catalogue & Analytics</h1>
+          <p className="text-gray-500">Manage your products, categories, inventory forecasts and sales analytics.</p>
         </div>
         {activeTab === 'products' ? (
           <button
@@ -127,14 +151,14 @@ export default function AdminDashboard() {
           >
             <Plus className="h-4 w-4" /> Add New Product
           </button>
-        ) : (
+        ) : activeTab === 'categories' ? (
           <button
             onClick={() => setIsCatFormOpen(true)}
             className="btn-primary inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" /> Add Category
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -154,6 +178,14 @@ export default function AdminDashboard() {
           }`}
         >
           Categories Manager
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'analytics' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Sales & Analytics
         </button>
       </div>
 
@@ -330,6 +362,202 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Analytics Tab View */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          {/* KPI Dashboard summary grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Total Revenue */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 text-primary">
+                <DollarSign className="h-24 w-24" />
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <DollarSign className="h-6 w-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Total Revenue</span>
+                <span className="text-2xl font-bold text-gray-900 mt-1 block">
+                  {isSummaryLoading ? '...' : `₹${salesSummary?.total_revenue?.toLocaleString() || '0.00'}`}
+                </span>
+              </div>
+            </div>
+
+            {/* Total Orders */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 text-violet-600">
+                <ShoppingBag className="h-24 w-24" />
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                <ShoppingBag className="h-6 w-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Total Orders</span>
+                <span className="text-2xl font-bold text-gray-900 mt-1 block">
+                  {isSummaryLoading ? '...' : salesSummary?.total_orders || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Total Customers */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 text-emerald-600">
+                <Users className="h-24 w-24" />
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Customers</span>
+                <span className="text-2xl font-bold text-gray-900 mt-1 block">
+                  {isSummaryLoading ? '...' : salesSummary?.total_customers || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Average Order Value */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 text-amber-600">
+                <TrendingUp className="h-24 w-24" />
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Avg Order Value</span>
+                <span className="text-2xl font-bold text-gray-900 mt-1 block">
+                  {isSummaryLoading ? '...' : `₹${parseFloat(salesSummary?.average_order_value || 0).toFixed(2)}`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Graphs & Sales Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Daily Sales Bar Chart */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" /> Daily Revenue Trend
+                </h3>
+                <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">Last 7 Days</span>
+              </div>
+              
+              <div className="h-64 flex items-end justify-between gap-4 pt-6 relative">
+                {isRevenueLoading ? (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-gray-500">Loading charts...</div>
+                ) : revenueByDay?.data?.length > 0 ? (
+                  revenueByDay.data.map((day, idx) => {
+                    const maxRevenue = Math.max(...revenueByDay.data.map(d => d.revenue), 1)
+                    const heightPercent = Math.min(100, Math.max(8, (day.revenue / maxRevenue) * 100))
+                    const dateObj = new Date(day.date)
+                    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+                    const dayNum = dateObj.toLocaleDateString('en-US', { day: 'numeric' })
+                    
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center group h-full justify-end relative">
+                        {/* Hover Details Popover */}
+                        <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-gray-900 text-white text-[10px] rounded py-1 px-2 pointer-events-none transition-all shadow-md z-10 text-center whitespace-nowrap">
+                          <p className="font-bold">₹{day.revenue.toFixed(0)}</p>
+                          <p className="text-[8px] text-gray-400">{day.orders_count} orders</p>
+                        </div>
+                        
+                        {/* Bar Segment */}
+                        <div 
+                          className="w-full rounded-t-lg bg-gradient-to-t from-primary/80 to-primary group-hover:from-primary group-hover:to-primary-dark transition-all duration-300 relative cursor-pointer"
+                          style={{ height: `${heightPercent}%` }}
+                        >
+                          {day.revenue === maxRevenue && (
+                            <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping" />
+                          )}
+                        </div>
+                        
+                        <span className="text-[10px] font-bold text-gray-700 mt-2">{dayName}</span>
+                        <span className="text-[9px] text-gray-400">{dayNum}</span>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-gray-500">No revenue data available.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Top Products */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-500" /> Best Sellers
+              </h3>
+              
+              <div className="space-y-4">
+                {isTopProductsLoading ? (
+                  <div className="text-sm text-gray-500 py-4">Loading top products...</div>
+                ) : topProducts?.length > 0 ? (
+                  topProducts.map((p, i) => {
+                    const topRevenue = topProducts[0]?.revenue || 1
+                    const progressWidth = Math.min(100, Math.max(10, (p.revenue / topRevenue) * 100))
+                    
+                    return (
+                      <div key={p.id || i} className="space-y-1">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-gray-900 truncate max-w-[180px]">{p.name}</span>
+                          <span className="text-gray-500 font-mono">₹{parseFloat(p.revenue).toFixed(0)}</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all duration-500" 
+                            style={{ width: `${progressWidth}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-gray-400">
+                          <span>{p.sales_count} units sold</span>
+                          <span>Stock: {p.current_stock}</span>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-sm text-gray-500 py-4">No top product sales yet.</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Low Stock Alerts and Action */}
+          {lowStockReport && lowStockReport.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2 text-orange-800">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="font-bold text-sm">Critical Inventory Action Required</h3>
+              </div>
+              <p className="text-xs text-orange-700">
+                The following products have dropped below active inventory threshold level (10 units). AI recommends immediate supplier dispatch.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {lowStockReport.map(item => (
+                  <div key={item.id} className="bg-white p-4 rounded-xl border border-orange-100 flex justify-between items-center shadow-sm">
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900">{item.name}</h4>
+                      <p className="text-[10px] text-gray-500 font-mono">SKU: {item.sku}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-red-600 block">{item.stock_quantity} remaining</span>
+                      <button 
+                        onClick={() => handleFetchAIReorder(item)}
+                        className="text-[9px] font-bold text-violet-600 hover:underline mt-1 block"
+                      >
+                        ⚡ AI Forecast Reorder
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
